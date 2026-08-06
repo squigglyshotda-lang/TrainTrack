@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Canvas from "./components/Canvas";
 import PiecePicker from "./components/PiecePicker";
 import BOMPanel from "./components/BOMPanel";
@@ -10,6 +10,7 @@ import { LayoutGraph } from "./model/graph";
 import type { FreePortInfo, SerializedLayout } from "./model/graph";
 import type { Gender } from "./model/types";
 import type { Template } from "./data/templates";
+import { PIECE_DEFS_BY_TYPE } from "./data/pieceDefs";
 import { exportBomAsZip } from "./model/exportStl";
 import { exportLayoutAsPdf } from "./model/exportPdf";
 import { buildShareUrl, readLayoutFromLocationHash } from "./model/shareLink";
@@ -143,6 +144,49 @@ export default function App() {
     commit();
   };
 
+  const handleFlipSelected = (pieceId: string) => {
+    graph.flipPiece(pieceId);
+    commit();
+  };
+
+  // Replacing = delete this piece (and anything built on it) and reopen
+  // the picker at the same spot it was attached, so the user picks
+  // whatever should go there instead. Reuses the exact same picker flow
+  // as clicking a free port — this just clears the old piece first.
+  const handleReplaceSelected = (pieceId: string, screenPos: { x: number; y: number }) => {
+    const att = graph.attachmentsByChild.get(pieceId);
+    setSelectedId(null);
+    if (att) {
+      const { parentPieceId, parentPortId } = att;
+      const parent = graph.pieces.get(parentPieceId)!;
+      const parentPort = PIECE_DEFS_BY_TYPE[parent.type].ports.find((p) => p.id === parentPortId)!;
+      graph.deletePiece(pieceId);
+      commit();
+      setPending({ screenPos, target: { pieceId: parentPieceId, portId: parentPortId, gender: parentPort.gender } });
+    } else {
+      graph.deletePiece(pieceId);
+      commit();
+      setPending({ screenPos, target: null });
+    }
+  };
+
+  // Delete / Backspace remove the selected piece, unless the user is
+  // typing in a field (the inventory counts, most likely).
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedId) {
+        e.preventDefault();
+        handleDeleteSelected();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
+
   const handleUndo = () => {
     if (!canUndo) return;
     const newIndex = history.index - 1;
@@ -177,7 +221,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "traintrack-layout.json";
+    a.download = "choo-builder-layout.json";
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -216,7 +260,7 @@ export default function App() {
       const text = await file.text();
       const data = JSON.parse(text) as Partial<SavedFile>;
       if (!data.layout || !Array.isArray(data.layout.actions)) {
-        throw new Error("That doesn't look like a TrainTrack layout file.");
+        throw new Error("That doesn't look like a Choo Builder layout file.");
       }
       const newGraph = LayoutGraph.fromSerialized(data.layout);
       graphRef.current = newGraph;
@@ -278,6 +322,9 @@ export default function App() {
           onEmptyCanvasClick={handleEmptyCanvasClick}
           selectedId={selectedId}
           closures={closures}
+          onFlipSelected={handleFlipSelected}
+          onReplaceSelected={handleReplaceSelected}
+          onDeleteSelected={handleDeleteSelected}
         />
         <div className="sidebar">
           <BOMPanel graph={graph} closures={closures} inventory={inventory} />

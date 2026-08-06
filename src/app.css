@@ -806,3 +806,44 @@ button {
   color: var(--muted);
   font-size: 13px;
 }
+
+/* --- Selection contextual menu (flip / replace / delete) --- */
+
+.selection-menu {
+  position: fixed;
+  z-index: 11;
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  padding: 5px;
+  box-shadow: 0 10px 24px var(--shadow);
+  transform: translateX(-50%);
+}
+
+.selection-menu button {
+  border: none;
+  background: none;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 12.5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.12s ease;
+}
+
+.selection-menu button:hover {
+  background: var(--surface-2);
+}
+
+.selection-menu-delete {
+  color: #b3413c;
+}
+
+.selection-menu-delete:hover {
+  background: color-mix(in srgb, #b3413c 14%, transparent) !important;
+}

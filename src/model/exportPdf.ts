@@ -39,7 +39,7 @@ export async function exportLayoutAsPdf(graph: LayoutGraph): Promise<void> {
   // Title block
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("TrainTrack Layout", margin, 16);
+  doc.text("Choo Builder Layout", margin, 16);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(new Date().toLocaleDateString(), margin, 22);
@@ -131,5 +131,5 @@ export async function exportLayoutAsPdf(graph: LayoutGraph): Promise<void> {
   doc.text("Total", bomX, y);
   doc.text(`x${total}`, bomX + bomColW - 4, y, { align: "right" });
 
-  doc.save("traintrack-assembly.pdf");
+  doc.save("choo-builder-assembly.pdf");
 }

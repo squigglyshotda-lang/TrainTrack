@@ -4,7 +4,7 @@
 // algebra (solveChildTransform), and "closure" is just a proximity check
 // over free ports, reported rather than enforced.
 import spec from "../data/track-spec.json";
-import { PIECE_DEFS_BY_TYPE } from "../data/pieceDefs";
+import { PIECE_DEFS_BY_TYPE, MIRROR_PARTNER } from "../data/pieceDefs";
 import {
   applyTransform,
   distance,
@@ -147,6 +147,52 @@ export class LayoutGraph {
     this.childrenOf.set(parentPieceId, kids);
 
     return piece;
+  }
+
+  canFlip(id: string): boolean {
+    const piece = this.pieces.get(id);
+    return !!piece && !!MIRROR_PARTNER[piece.type];
+  }
+
+  // Swaps a piece for its mirror-image type in place. The piece's own port
+  // "a"/"b"/etc. ids don't change, only which local geometry they map to —
+  // so if this piece is attached to a parent, its own transform has to be
+  // re-solved (the port it attaches through may now sit somewhere else
+  // locally), and the same cascades down through everything built on top
+  // of it, since ITS ports may have moved too.
+  flipPiece(id: string): void {
+    const piece = this.pieces.get(id);
+    if (!piece) throw new Error(`Unknown piece ${id}`);
+    const mirrorType = MIRROR_PARTNER[piece.type];
+    if (!mirrorType) return;
+
+    piece.type = mirrorType;
+
+    const att = this.attachmentsByChild.get(id);
+    if (att) {
+      const parent = this.pieces.get(att.parentPieceId)!;
+      const parentPort = PIECE_DEFS_BY_TYPE[parent.type].ports.find((p) => p.id === att.parentPortId)!;
+      const childPort = PIECE_DEFS_BY_TYPE[mirrorType].ports.find((p) => p.id === att.childPortId)!;
+      const parentWorldPos = applyTransform(parent.transform, parentPort);
+      const parentWorldHeadingDeg = worldHeading(parent.transform, parentPort.headingDeg);
+      piece.transform = solveChildTransform(parentWorldPos, parentWorldHeadingDeg, childPort, childPort.headingDeg);
+    }
+
+    this.recomputeDescendantTransforms(id);
+  }
+
+  private recomputeDescendantTransforms(parentId: string): void {
+    for (const childId of this.childrenOf.get(parentId) ?? []) {
+      const att = this.attachmentsByChild.get(childId)!;
+      const parent = this.pieces.get(parentId)!;
+      const child = this.pieces.get(childId)!;
+      const parentPort = PIECE_DEFS_BY_TYPE[parent.type].ports.find((p) => p.id === att.parentPortId)!;
+      const childPort = PIECE_DEFS_BY_TYPE[child.type].ports.find((p) => p.id === att.childPortId)!;
+      const parentWorldPos = applyTransform(parent.transform, parentPort);
+      const parentWorldHeadingDeg = worldHeading(parent.transform, parentPort.headingDeg);
+      child.transform = solveChildTransform(parentWorldPos, parentWorldHeadingDeg, childPort, childPort.headingDeg);
+      this.recomputeDescendantTransforms(childId);
+    }
   }
 
   private removeSubtree(id: string): void {

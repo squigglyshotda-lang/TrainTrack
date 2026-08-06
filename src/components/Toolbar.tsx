@@ -40,7 +40,7 @@ export default function Toolbar({
   return (
     <div className="toolbar">
       <div className="toolbar-heading">
-        <span className="toolbar-title">TrainTrack Planner</span>
+        <span className="toolbar-title">Choo Builder</span>
         <span className="toolbar-phase">Planner · export · inventory · sharing</span>
       </div>
       <div className="toolbar-actions">

@@ -37,7 +37,7 @@ export async function exportBomAsZip(bom: BomRow[]): Promise<void> {
   const downloadUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = downloadUrl;
-  a.download = "traintrack-layout.zip";
+  a.download = "choo-builder-layout.zip";
   document.body.appendChild(a);
   a.click();
   a.remove();

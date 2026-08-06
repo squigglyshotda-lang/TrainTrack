@@ -1,4 +1,4 @@
-# TrainTrack
+# Choo Builder
 
 A browser-based planner for BRIO-compatible wooden train track. Build a
 layout by attaching pieces port-to-port, then export the exact set of
@@ -9,7 +9,7 @@ pieces as 3D-printable STL files.
 Phases 1, 2a, and 3 are complete. Phase 4 is partial: PDF export and
 shareable links are done; elevation (ramps/bridges/piers) is not — see
 below for why. Phase 2b (live OpenSCAD-in-the-browser generation) hasn't
-been attempted; Phase 2a already covers every piece Phase 1 offers.
+been attempted; Phase 2a already covers every piece type in the app.
 
 ## How the layout works
 
@@ -23,13 +23,20 @@ separately.
 
 - Click a free port, pick a piece from the popup, it attaches. The popup
   and the permanent "Piece Library" panel on the left both show a real
-  thumbnail of each piece's shape — not just its name.
+  thumbnail of each piece's shape — not just its name. The dogbone
+  connector (see below) and mirror-image pieces are left out of both —
+  mirrors are reached via Flip instead of being separate entries.
+- Click a placed piece to select it — a contextual menu appears with
+  **Flip** (mirrors the piece in place, only shown for pieces that have a
+  genuinely different mirror image), **Replace** (swaps it for a different
+  piece, keeping the same attachment point), and **Delete**. The Delete
+  and Backspace keys also delete whatever's selected.
 - Free ports are colored circles (solid = peg, ring = socket); occupied
   ports fade to small gray dots.
 - "Start from a Template" loads a pre-built, pre-verified loop (built and
-  closure-checked with the actual graph engine, not hand-derived) — a
-  tight circle, a stadium oval, or an oval with a siding branching off a
-  4-way crossing.
+  closure-checked with the actual graph engine, not hand-derived): a tight
+  circle, a stadium oval, an oval with a siding, a switch yard, or a
+  figure-8.
 - The bill of materials in the sidebar updates live, split into pieces you
   already own (set in "My Inventory") versus pieces still to print.
 - A loop is "closed" when two free ports land within a few mm of each
@@ -38,7 +45,10 @@ separately.
 - The whole graph reduces to an ordered list of placement actions — a root
   piece, then a chain of "attach this piece's port to that port" steps.
   That's what save/load, undo/redo, and shareable links all replay under
-  the hood; none of them store baked-in coordinates.
+  the hood; none of them store baked-in coordinates. Flip works the same
+  way in reverse: it re-solves the flipped piece's own transform (and
+  cascades through everything attached beyond it), it doesn't move
+  anything by hand.
 
 ## Where the dimensions come from
 
@@ -55,11 +65,13 @@ and 90° curves (each with an opposite-hand version), a Y-turnout, a
 curve+straight turnout (with an opposite-hand version), a 4-way crossing,
 and a dogbone connector (joins two socket-ended pieces facing each other —
 the one case no ordinary piece can handle, since every ordinary piece has
-exactly one peg and one socket). `src/data/stlLibrary.ts` maps each piece
-type to the real STL file that prints it (from torwan's generator repo —
-see its comments for exactly which file, and how the opposite-hand pieces
-without a matching pre-generated file were derived by mirroring). Nothing
-in the UI hardcodes a dimension or a file path.
+exactly one peg and one socket; hidden from the palette since it's a
+specialist accessory, not something most layouts need). `src/data/
+stlLibrary.ts` maps each piece type to the real STL file that prints it
+(from torwan's generator repo — see its comments for exactly which file,
+and how the opposite-hand pieces without a matching pre-generated file
+were derived by mirroring). Nothing in the UI hardcodes a dimension or a
+file path.
 
 ## Exporting
 
@@ -87,6 +99,13 @@ of a rushed bolt-on.
 Phase 2a's static library already covers every piece type in the app, so
 there's been no concrete need yet for custom-parameter generation
 (arbitrary radius, custom length, name engraving).
+
+**Draw-a-shape and auto-join.** Not yet built. Auto-join (shift-select two
+free ports, connect them automatically) is a genuine pathfinding problem —
+searching combinations of pieces until one lands on the target port within
+tolerance — and is tractable to build. Draw-a-shape (sketch a rough path,
+fit pieces to it) is a harder curve-approximation problem on top of that
+same search, and needs its own careful pass rather than a rushed one.
 
 ## Development
 

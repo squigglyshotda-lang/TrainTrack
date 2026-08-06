@@ -165,13 +165,13 @@ export const PIECE_DEFS: PieceDef[] = [
     spec.pieces.curve45.radiusMm.value,
     spec.pieces.curve45.angleDeg.value
   ),
-  curveLike(
-    "curve45Mirror",
-    "45° Curve (opposite hand)",
-    "Curve 45° (mirror)",
-    spec.pieces.curve45.radiusMm.value,
-    -spec.pieces.curve45.angleDeg.value
-  ),
+  { ...curveLike(
+      "curve45Mirror",
+      "45° Curve (opposite hand)",
+      "Curve 45° (mirror)",
+      spec.pieces.curve45.radiusMm.value,
+      -spec.pieces.curve45.angleDeg.value
+    ), hidden: true },
   switchY(),
   crossing4(),
   straightLike("shortStraight", "Short Straight", "Short Straight", spec.pieces.shortStraight.lengthMm.value),
@@ -182,17 +182,34 @@ export const PIECE_DEFS: PieceDef[] = [
     spec.pieces.curve90.radiusMm.value,
     spec.pieces.curve90.angleDeg.value
   ),
-  curveLike(
-    "curve90Mirror",
-    "90° Curve (opposite hand)",
-    "Curve 90° (mirror)",
-    spec.pieces.curve90.radiusMm.value,
-    -spec.pieces.curve90.angleDeg.value
-  ),
+  { ...curveLike(
+      "curve90Mirror",
+      "90° Curve (opposite hand)",
+      "Curve 90° (mirror)",
+      spec.pieces.curve90.radiusMm.value,
+      -spec.pieces.curve90.angleDeg.value
+    ), hidden: true },
   switchCurveStraight(false),
-  switchCurveStraight(true),
-  dogbone(),
+  { ...switchCurveStraight(true), hidden: true },
+  { ...dogbone(), hidden: true },
 ];
+
+// The palette and the port-click picker only ever offer these.
+export const VISIBLE_PIECE_DEFS: PieceDef[] = PIECE_DEFS.filter((def) => !def.hidden);
+
+// Pieces reachable only via the Flip action on a piece that's already
+// placed, keyed by the type flipping produces the OTHER way. Only pieces
+// with a genuinely different mirror shape are listed — a straight or a
+// symmetric piece like switchY/crossing4 looks identical either way, so
+// flipping them wouldn't do anything visible.
+export const MIRROR_PARTNER: Record<string, string> = {
+  curve45: "curve45Mirror",
+  curve45Mirror: "curve45",
+  curve90: "curve90Mirror",
+  curve90Mirror: "curve90",
+  switchCurveStraight: "switchCurveStraightMirror",
+  switchCurveStraightMirror: "switchCurveStraight",
+};
 
 export const PIECE_DEFS_BY_TYPE: Record<string, PieceDef> = Object.fromEntries(
   PIECE_DEFS.map((def) => [def.type, def])

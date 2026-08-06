@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
-import { PIECE_DEFS_BY_TYPE } from "../data/pieceDefs";
+import { PIECE_DEFS_BY_TYPE, MIRROR_PARTNER } from "../data/pieceDefs";
 import { polygonToPath } from "../model/svgPath";
+import SelectionMenu from "./SelectionMenu";
 import type { LayoutGraph, FreePortInfo, ClosurePair } from "../model/graph";
 
 interface View {
@@ -17,6 +18,9 @@ interface CanvasProps {
   onEmptyCanvasClick: (screenPos: { x: number; y: number }) => void;
   selectedId: string | null;
   closures: ClosurePair[];
+  onFlipSelected: (pieceId: string) => void;
+  onReplaceSelected: (pieceId: string, screenPos: { x: number; y: number }) => void;
+  onDeleteSelected: () => void;
 }
 
 const PEG_COLOR = "var(--peg)";
@@ -29,6 +33,9 @@ export default function Canvas({
   onEmptyCanvasClick,
   selectedId,
   closures,
+  onFlipSelected,
+  onReplaceSelected,
+  onDeleteSelected,
 }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>({ scale: 1.6, tx: 400, ty: 300 });
@@ -39,6 +46,17 @@ export default function Canvas({
   const toLocal = (clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect();
     return { x: clientX - (rect?.left ?? 0), y: clientY - (rect?.top ?? 0) };
+  };
+
+  // World mm coordinates -> viewport screen pixels, inverse of toLocal plus
+  // the pan/zoom transform. Used to position the free-port picker and the
+  // selection menu at the right spot regardless of current pan/zoom.
+  const toScreen = (worldX: number, worldY: number) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    return {
+      x: (rect?.left ?? 0) + view.tx + worldX * view.scale,
+      y: (rect?.top ?? 0) + view.ty + worldY * view.scale,
+    };
   };
 
   const handleBackgroundPointerDown = (e: ReactPointerEvent<SVGSVGElement>) => {
@@ -154,10 +172,7 @@ export default function Canvas({
               onPointerDown={(e) => e.stopPropagation()}
               onPointerUp={(e) => {
                 e.stopPropagation();
-                const rect = containerRef.current?.getBoundingClientRect();
-                const screenX = (rect?.left ?? 0) + view.tx + fp.worldPos.x * view.scale;
-                const screenY = (rect?.top ?? 0) + view.ty + fp.worldPos.y * view.scale;
-                onPortClick(fp, { x: screenX, y: screenY });
+                onPortClick(fp, toScreen(fp.worldPos.x, fp.worldPos.y));
               }}
               className="port-free"
             >
@@ -179,6 +194,22 @@ export default function Canvas({
           Click anywhere to place your first piece
         </div>
       )}
+
+      {selectedId &&
+        graph.pieces.has(selectedId) &&
+        (() => {
+          const piece = graph.pieces.get(selectedId)!;
+          const anchor = toScreen(piece.transform.x, piece.transform.y);
+          return (
+            <SelectionMenu
+              screenPos={{ x: anchor.x, y: anchor.y - 44 }}
+              canFlip={!!MIRROR_PARTNER[piece.type]}
+              onFlip={() => onFlipSelected(selectedId)}
+              onReplace={() => onReplaceSelected(selectedId, anchor)}
+              onDelete={onDeleteSelected}
+            />
+          );
+        })()}
     </div>
   );
 }

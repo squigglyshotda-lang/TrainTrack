@@ -78,4 +78,66 @@ export const TEMPLATES: Template[] = [
       ],
     },
   },
+  {
+    id: "switch-yard",
+    name: "Switch Yard",
+    description:
+      "Same crossing-siding trick as above, but the siding ends in a Y-turnout instead of just stopping — " +
+      "two little dead-end branches to park pieces on.",
+    layout: {
+      version: 1,
+      actions: [
+        { id: "piece1", type: "straight" },
+        { id: "piece2", type: "crossing4", parent: { pieceId: "piece1", portId: "b" }, childPortId: "a1" },
+        { id: "piece3", type: "curve45", parent: { pieceId: "piece2", portId: "a2" }, childPortId: "a" },
+        { id: "piece4", type: "curve45", parent: { pieceId: "piece3", portId: "b" }, childPortId: "a" },
+        { id: "piece5", type: "curve45", parent: { pieceId: "piece4", portId: "b" }, childPortId: "a" },
+        { id: "piece6", type: "curve45", parent: { pieceId: "piece5", portId: "b" }, childPortId: "a" },
+        { id: "piece7", type: "straight", parent: { pieceId: "piece6", portId: "b" }, childPortId: "a" },
+        { id: "piece8", type: "straight", parent: { pieceId: "piece7", portId: "b" }, childPortId: "a" },
+        { id: "piece9", type: "curve45", parent: { pieceId: "piece8", portId: "b" }, childPortId: "a" },
+        { id: "piece10", type: "curve45", parent: { pieceId: "piece9", portId: "b" }, childPortId: "a" },
+        { id: "piece11", type: "curve45", parent: { pieceId: "piece10", portId: "b" }, childPortId: "a" },
+        { id: "piece12", type: "curve45", parent: { pieceId: "piece11", portId: "b" }, childPortId: "a" },
+        { id: "piece13", type: "halfStraight", parent: { pieceId: "piece2", portId: "b2" }, childPortId: "a" },
+        { id: "piece14", type: "switchY", parent: { pieceId: "piece13", portId: "b" }, childPortId: "common" },
+      ],
+    },
+  },
+  {
+    id: "figure-8",
+    name: "Figure-8",
+    description:
+      "Two loops sharing one 4-way crossing. Each axis of the crossing needed its own 'upstream' straight " +
+      "to match the geometry the loop closure depends on — without it only one of the two loops closes. " +
+      "Both close at an exact 0.000mm gap.",
+    layout: {
+      version: 1,
+      actions: [
+        { id: "piece1", type: "straight" },
+        { id: "piece2", type: "crossing4", parent: { pieceId: "piece1", portId: "b" }, childPortId: "a1" },
+        { id: "piece3", type: "curve45", parent: { pieceId: "piece2", portId: "a2" }, childPortId: "a" },
+        { id: "piece4", type: "curve45", parent: { pieceId: "piece3", portId: "b" }, childPortId: "a" },
+        { id: "piece5", type: "curve45", parent: { pieceId: "piece4", portId: "b" }, childPortId: "a" },
+        { id: "piece6", type: "curve45", parent: { pieceId: "piece5", portId: "b" }, childPortId: "a" },
+        { id: "piece7", type: "straight", parent: { pieceId: "piece6", portId: "b" }, childPortId: "a" },
+        { id: "piece8", type: "straight", parent: { pieceId: "piece7", portId: "b" }, childPortId: "a" },
+        { id: "piece9", type: "curve45", parent: { pieceId: "piece8", portId: "b" }, childPortId: "a" },
+        { id: "piece10", type: "curve45", parent: { pieceId: "piece9", portId: "b" }, childPortId: "a" },
+        { id: "piece11", type: "curve45", parent: { pieceId: "piece10", portId: "b" }, childPortId: "a" },
+        { id: "piece12", type: "curve45", parent: { pieceId: "piece11", portId: "b" }, childPortId: "a" },
+        { id: "piece13", type: "straight", parent: { pieceId: "piece2", portId: "b1" }, childPortId: "b" },
+        { id: "piece14", type: "curve45", parent: { pieceId: "piece2", portId: "b2" }, childPortId: "a" },
+        { id: "piece15", type: "curve45", parent: { pieceId: "piece14", portId: "b" }, childPortId: "a" },
+        { id: "piece16", type: "curve45", parent: { pieceId: "piece15", portId: "b" }, childPortId: "a" },
+        { id: "piece17", type: "curve45", parent: { pieceId: "piece16", portId: "b" }, childPortId: "a" },
+        { id: "piece18", type: "straight", parent: { pieceId: "piece17", portId: "b" }, childPortId: "a" },
+        { id: "piece19", type: "straight", parent: { pieceId: "piece18", portId: "b" }, childPortId: "a" },
+        { id: "piece20", type: "curve45", parent: { pieceId: "piece19", portId: "b" }, childPortId: "a" },
+        { id: "piece21", type: "curve45", parent: { pieceId: "piece20", portId: "b" }, childPortId: "a" },
+        { id: "piece22", type: "curve45", parent: { pieceId: "piece21", portId: "b" }, childPortId: "a" },
+        { id: "piece23", type: "curve45", parent: { pieceId: "piece22", portId: "b" }, childPortId: "a" },
+      ],
+    },
+  },
 ];

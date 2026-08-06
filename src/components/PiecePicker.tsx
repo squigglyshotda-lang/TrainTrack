@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PIECE_DEFS, PIECE_DEFS_BY_TYPE } from "../data/pieceDefs";
+import { VISIBLE_PIECE_DEFS, PIECE_DEFS_BY_TYPE } from "../data/pieceDefs";
 import PieceThumbnail from "./PieceThumbnail";
 import type { Gender, Port } from "../model/types";
 
@@ -20,7 +20,7 @@ function compatiblePorts(ports: Port[], requiredGender?: Gender): Port[] {
 export default function PiecePicker({ screenPos, requiredGender, onChoose, onCancel }: PiecePickerProps) {
   const [pendingType, setPendingType] = useState<string | null>(null);
 
-  const options = PIECE_DEFS.filter((def) => compatiblePorts(def.ports, requiredGender).length > 0);
+  const options = VISIBLE_PIECE_DEFS.filter((def) => compatiblePorts(def.ports, requiredGender).length > 0);
 
   const left = Math.min(screenPos.x, window.innerWidth - 300);
   const top = Math.min(screenPos.y, window.innerHeight - 340);

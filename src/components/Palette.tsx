@@ -1,4 +1,4 @@
-import { PIECE_DEFS } from "../data/pieceDefs";
+import { VISIBLE_PIECE_DEFS } from "../data/pieceDefs";
 import PieceThumbnail from "./PieceThumbnail";
 
 interface PaletteProps {
@@ -21,7 +21,7 @@ export default function Palette({ isEmpty, onSelectRoot }: PaletteProps) {
           : "Attach more by clicking a free port on the canvas."}
       </p>
       <div className="palette-grid">
-        {PIECE_DEFS.map((def) => (
+        {VISIBLE_PIECE_DEFS.map((def) => (
           <button
             key={def.type}
             className="palette-card"
