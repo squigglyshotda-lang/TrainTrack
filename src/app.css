@@ -847,3 +847,54 @@ button {
 .selection-menu-delete:hover {
   background: color-mix(in srgb, #b3413c 14%, transparent) !important;
 }
+
+/* --- Shift-select two ports + auto-join --- */
+
+.port-join-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  animation: join-ring-pulse 1.4s ease-in-out infinite;
+  /* Decorative only — never swallow a click meant for a nearby port
+     underneath it (matters when two free ports are close together on
+     screen, e.g. an almost-closed loop). */
+  pointer-events: none;
+}
+
+@keyframes join-ring-pulse {
+  0%, 100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .port-join-ring {
+    animation: none;
+    opacity: 0.9;
+  }
+}
+
+.join-button {
+  position: fixed;
+  z-index: 11;
+  transform: translate(-50%, -50%);
+  border: none;
+  background: var(--accent);
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px var(--shadow);
+  white-space: nowrap;
+}
+
+.join-button:hover {
+  background: var(--accent-strong);
+}

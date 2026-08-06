@@ -14,9 +14,12 @@ interface View {
 interface CanvasProps {
   graph: LayoutGraph;
   onPortClick: (info: FreePortInfo, screenPos: { x: number; y: number }) => void;
+  onPortShiftClick: (info: FreePortInfo) => void;
   onPieceClick: (pieceId: string) => void;
   onEmptyCanvasClick: (screenPos: { x: number; y: number }) => void;
   selectedId: string | null;
+  selectedPortKeys: Set<string>;
+  onJoinSelectedPorts: () => void;
   closures: ClosurePair[];
   onFlipSelected: (pieceId: string) => void;
   onReplaceSelected: (pieceId: string, screenPos: { x: number; y: number }) => void;
@@ -29,9 +32,12 @@ const SOCKET_COLOR = "var(--socket)";
 export default function Canvas({
   graph,
   onPortClick,
+  onPortShiftClick,
   onPieceClick,
   onEmptyCanvasClick,
   selectedId,
+  selectedPortKeys,
+  onJoinSelectedPorts,
   closures,
   onFlipSelected,
   onReplaceSelected,
@@ -165,27 +171,35 @@ export default function Canvas({
             />
           ))}
 
-          {freePorts.map((fp) => (
-            <g
-              key={`${fp.pieceId}:${fp.port.id}`}
-              transform={`translate(${fp.worldPos.x} ${fp.worldPos.y})`}
-              onPointerDown={(e) => e.stopPropagation()}
-              onPointerUp={(e) => {
-                e.stopPropagation();
-                onPortClick(fp, toScreen(fp.worldPos.x, fp.worldPos.y));
-              }}
-              className="port-free"
-            >
-              {fp.port.gender === "peg" ? (
-                <circle r={4} fill={PEG_COLOR} />
-              ) : (
-                <>
-                  <circle r={5} fill={SOCKET_COLOR} />
-                  <circle r={2.4} fill="var(--bg)" />
-                </>
-              )}
-            </g>
-          ))}
+          {freePorts.map((fp) => {
+            const isPortSelected = selectedPortKeys.has(`${fp.pieceId}:${fp.port.id}`);
+            return (
+              <g
+                key={`${fp.pieceId}:${fp.port.id}`}
+                transform={`translate(${fp.worldPos.x} ${fp.worldPos.y})`}
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                  if (e.shiftKey) {
+                    onPortShiftClick(fp);
+                  } else {
+                    onPortClick(fp, toScreen(fp.worldPos.x, fp.worldPos.y));
+                  }
+                }}
+                className="port-free"
+              >
+                {isPortSelected && <circle r={9} className="port-join-ring" />}
+                {fp.port.gender === "peg" ? (
+                  <circle r={4} fill={PEG_COLOR} />
+                ) : (
+                  <>
+                    <circle r={5} fill={SOCKET_COLOR} />
+                    <circle r={2.4} fill="var(--bg)" />
+                  </>
+                )}
+              </g>
+            );
+          })}
         </g>
       </svg>
 
@@ -208,6 +222,26 @@ export default function Canvas({
               onReplace={() => onReplaceSelected(selectedId, anchor)}
               onDelete={onDeleteSelected}
             />
+          );
+        })()}
+
+      {selectedPortKeys.size === 2 &&
+        (() => {
+          const selected = freePorts.filter((fp) => selectedPortKeys.has(`${fp.pieceId}:${fp.port.id}`));
+          if (selected.length !== 2) return null;
+          const midWorld = {
+            x: (selected[0].worldPos.x + selected[1].worldPos.x) / 2,
+            y: (selected[0].worldPos.y + selected[1].worldPos.y) / 2,
+          };
+          const anchor = toScreen(midWorld.x, midWorld.y);
+          return (
+            <button
+              className="join-button"
+              style={{ left: anchor.x, top: anchor.y }}
+              onClick={onJoinSelectedPorts}
+            >
+              ⚡ Join
+            </button>
           );
         })()}
     </div>

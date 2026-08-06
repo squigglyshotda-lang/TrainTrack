@@ -37,6 +37,16 @@ separately.
   closure-checked with the actual graph engine, not hand-derived): a tight
   circle, a stadium oval, an oval with a siding, a switch yard, or a
   figure-8.
+- Shift-click two free ports to select them (a pulsing ring marks each),
+  then hit the **⚡ Join** button that appears between them — a search
+  (breadth-first over piece combinations, shortest solution first) looks
+  for a sequence of pieces that connects them and places it if it finds
+  one. It's genuinely a search, not a shortcut: most arbitrary port pairs
+  don't have an exact match against this piece alphabet's discrete lengths
+  and angles, so a clear message explains when nothing was found rather
+  than forcing a bad fit. Two peg ends are always refused outright — no
+  piece here bridges two pegs (same as real BRIO connectors); two socket
+  ends are bridged with a dogbone automatically when needed.
 - The bill of materials in the sidebar updates live, split into pieces you
   already own (set in "My Inventory") versus pieces still to print.
 - A loop is "closed" when two free ports land within a few mm of each
@@ -100,12 +110,12 @@ Phase 2a's static library already covers every piece type in the app, so
 there's been no concrete need yet for custom-parameter generation
 (arbitrary radius, custom length, name engraving).
 
-**Draw-a-shape and auto-join.** Not yet built. Auto-join (shift-select two
-free ports, connect them automatically) is a genuine pathfinding problem —
-searching combinations of pieces until one lands on the target port within
-tolerance — and is tractable to build. Draw-a-shape (sketch a rough path,
-fit pieces to it) is a harder curve-approximation problem on top of that
-same search, and needs its own careful pass rather than a rushed one.
+**Draw-a-shape.** Not yet built (auto-join above is done). Draw-a-shape
+(sketch a rough path, fit pieces to it) needs the same search auto-join
+uses, plus a real curve-approximation pass on top — deciding which points
+along a freehand-drawn path to actually route through — and that deserves
+its own careful pass rather than a rushed one now that the routing engine
+it depends on exists and is tested.
 
 ## Development
 

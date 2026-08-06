@@ -14,7 +14,13 @@ import { PIECE_DEFS_BY_TYPE } from "./data/pieceDefs";
 import { exportBomAsZip } from "./model/exportStl";
 import { exportLayoutAsPdf } from "./model/exportPdf";
 import { buildShareUrl, readLayoutFromLocationHash } from "./model/shareLink";
+import { findJoinPath, placeJoinPath } from "./model/autoJoin";
 import "./app.css";
+
+interface SelectedPort {
+  pieceId: string;
+  portId: string;
+}
 
 interface PendingPick {
   screenPos: { x: number; y: number };
@@ -61,6 +67,7 @@ export default function App() {
   }));
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedPorts, setSelectedPorts] = useState<SelectedPort[]>([]);
   const [pending, setPending] = useState<PendingPick | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [bannerError, setBannerError] = useState<string | null>(null);
@@ -70,6 +77,7 @@ export default function App() {
   const closures = graph.detectClosures();
   const canUndo = history.index > 0;
   const canRedo = history.index < history.entries.length - 1;
+  const selectedPortKeys = new Set(selectedPorts.map((p) => `${p.pieceId}:${p.portId}`));
 
   // Every mutation (place, attach, delete) funnels through here: snapshot
   // the graph's action list, drop any redo tail, and push it as the new
@@ -86,6 +94,7 @@ export default function App() {
 
   const handleEmptyCanvasClick = (screenPos: { x: number; y: number }) => {
     setSelectedId(null);
+    setSelectedPorts([]);
     if (graph.isEmpty()) {
       setPending({ screenPos, target: null });
     } else {
@@ -94,14 +103,31 @@ export default function App() {
   };
 
   const handlePortClick = (info: FreePortInfo, screenPos: { x: number; y: number }) => {
+    setSelectedPorts([]);
     setPending({
       screenPos,
       target: { pieceId: info.pieceId, portId: info.port.id, gender: info.port.gender },
     });
   };
 
+  // Shift-click on a free port builds up to two selected ports for the
+  // Join feature, instead of opening the attach picker. Clicking a third
+  // port starts a fresh pair rather than growing past two.
+  const handlePortShiftClick = (info: FreePortInfo) => {
+    setSelectedId(null);
+    setPending(null);
+    const key: SelectedPort = { pieceId: info.pieceId, portId: info.port.id };
+    setSelectedPorts((prev) => {
+      const already = prev.findIndex((p) => p.pieceId === key.pieceId && p.portId === key.portId);
+      if (already !== -1) return prev.filter((_, i) => i !== already);
+      if (prev.length >= 2) return [key];
+      return [...prev, key];
+    });
+  };
+
   const handlePieceClick = (pieceId: string) => {
     setSelectedId(pieceId);
+    setSelectedPorts([]);
     setPending(null);
   };
 
@@ -127,6 +153,7 @@ export default function App() {
     const newGraph = LayoutGraph.fromSerialized(template.layout);
     graphRef.current = newGraph;
     setSelectedId(null);
+    setSelectedPorts([]);
     setPending(null);
     setHistory({ entries: [newGraph.serialize()], index: 0 });
   };
@@ -134,6 +161,7 @@ export default function App() {
   const handleDeleteLast = () => {
     graph.deleteLast();
     setSelectedId(null);
+    setSelectedPorts([]);
     commit();
   };
 
@@ -170,6 +198,50 @@ export default function App() {
     }
   };
 
+  // Searches for a sequence of pieces connecting the two selected ports
+  // and places it if one's found. This is a real search (see autoJoin.ts),
+  // not guaranteed to succeed — most arbitrary port pairs don't have an
+  // exact match within the same tolerance the rest of the app uses for
+  // loop closures, so failure is reported plainly rather than forced.
+  const handleJoinSelectedPorts = () => {
+    if (selectedPorts.length !== 2) return;
+    const free = graph.freePorts();
+    const [a, b] = selectedPorts.map(
+      (sel) => free.find((fp) => fp.pieceId === sel.pieceId && fp.port.id === sel.portId)!
+    );
+    if (!a || !b) {
+      setBannerError("One of the selected ports isn't free anymore.");
+      setSelectedPorts([]);
+      return;
+    }
+
+    setBannerError(null);
+    const result = findJoinPath(
+      { pos: a.worldPos, headingDeg: a.worldHeadingDeg, gender: a.port.gender },
+      { pos: b.worldPos, headingDeg: b.worldHeadingDeg, gender: b.port.gender }
+    );
+
+    if (!result) {
+      const bothPeg = a.port.gender === "peg" && b.port.gender === "peg";
+      setBannerError(
+        bothPeg
+          ? "Can't join two peg ends — nothing in this piece library bridges two pegs (real BRIO connectors can't do this either)."
+          : "Couldn't find a piece combination that connects those two ports within the usual closure tolerance. Try two ports that are more directly aligned."
+      );
+      return;
+    }
+
+    if (result.pieceTypes.length === 0) {
+      setBannerError(`Those two ports already line up (gap ${result.gapMm.toFixed(1)}mm) — nothing to add.`);
+      setSelectedPorts([]);
+      return;
+    }
+
+    placeJoinPath(graph, a.pieceId, a.port.id, result.pieceTypes);
+    setSelectedPorts([]);
+    commit();
+  };
+
   // Delete / Backspace remove the selected piece, unless the user is
   // typing in a field (the inventory counts, most likely).
   useEffect(() => {
@@ -192,6 +264,7 @@ export default function App() {
     const newIndex = history.index - 1;
     graphRef.current = LayoutGraph.fromSerialized(history.entries[newIndex]);
     setSelectedId(null);
+    setSelectedPorts([]);
     setHistory((prev) => ({ ...prev, index: newIndex }));
   };
 
@@ -200,6 +273,7 @@ export default function App() {
     const newIndex = history.index + 1;
     graphRef.current = LayoutGraph.fromSerialized(history.entries[newIndex]);
     setSelectedId(null);
+    setSelectedPorts([]);
     setHistory((prev) => ({ ...prev, index: newIndex }));
   };
 
@@ -265,6 +339,7 @@ export default function App() {
       const newGraph = LayoutGraph.fromSerialized(data.layout);
       graphRef.current = newGraph;
       setSelectedId(null);
+      setSelectedPorts([]);
       setInventory(data.inventory ?? {});
       // Loading starts a fresh undo history at the loaded state, rather
       // than treating the load itself as one undoable step.
@@ -318,9 +393,12 @@ export default function App() {
         <Canvas
           graph={graph}
           onPortClick={handlePortClick}
+          onPortShiftClick={handlePortShiftClick}
           onPieceClick={handlePieceClick}
           onEmptyCanvasClick={handleEmptyCanvasClick}
           selectedId={selectedId}
+          selectedPortKeys={selectedPortKeys}
+          onJoinSelectedPorts={handleJoinSelectedPorts}
           closures={closures}
           onFlipSelected={handleFlipSelected}
           onReplaceSelected={handleReplaceSelected}
