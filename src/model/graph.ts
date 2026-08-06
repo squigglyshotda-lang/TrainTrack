@@ -42,10 +42,22 @@ export interface ClosurePair {
   gapMm: number;
 }
 
-let idCounter = 0;
-function nextId(): string {
-  idCounter += 1;
-  return `piece${idCounter}`;
+// The graph's entire composition, boiled down to the sequence of placement
+// decisions that built it — a root piece, then a chain of "attach childType
+// via childPortId to parentPieceId's parentPortId" steps. Positions and
+// rotations are never part of this: they're always re-derived on load by
+// replaying these steps through the same placement math used interactively.
+// This is what save/load, undo/redo, and delete-driven history all share.
+export interface SerializedAction {
+  id: string;
+  type: string;
+  parent?: { pieceId: string; portId: string };
+  childPortId?: string;
+}
+
+export interface SerializedLayout {
+  version: 1;
+  actions: SerializedAction[];
 }
 
 function occupiedKey(pieceId: string, portId: string): string {
@@ -57,14 +69,27 @@ export class LayoutGraph {
   order: string[] = [];
   attachmentsByChild = new Map<string, Attachment>();
   childrenOf = new Map<string, string[]>();
-  selectedId: string | null = null;
+  private idCounter = 0;
+
+  private nextId(): string {
+    this.idCounter += 1;
+    return `piece${this.idCounter}`;
+  }
+
+  // Keeps future auto-generated ids from colliding with ones loaded from a
+  // saved file or an earlier point in the undo history.
+  private noteExistingId(id: string): void {
+    const match = /^piece(\d+)$/.exec(id);
+    if (match) this.idCounter = Math.max(this.idCounter, Number(match[1]));
+  }
 
   isEmpty(): boolean {
     return this.pieces.size === 0;
   }
 
-  placeRoot(type: string): PlacedPiece {
-    const id = nextId();
+  placeRoot(type: string, explicitId?: string): PlacedPiece {
+    const id = explicitId ?? this.nextId();
+    this.noteExistingId(id);
     const piece: PlacedPiece = { id, type, transform: { x: 0, y: 0, rotationDeg: 0 } };
     this.pieces.set(id, piece);
     this.order.push(id);
@@ -79,7 +104,8 @@ export class LayoutGraph {
     parentPieceId: string,
     parentPortId: string,
     childType: string,
-    childPortId: string
+    childPortId: string,
+    explicitId?: string
   ): PlacedPiece {
     const parent = this.pieces.get(parentPieceId);
     if (!parent) throw new Error(`Unknown parent piece ${parentPieceId}`);
@@ -104,7 +130,8 @@ export class LayoutGraph {
       childPort.headingDeg
     );
 
-    const id = nextId();
+    const id = explicitId ?? this.nextId();
+    this.noteExistingId(id);
     const piece: PlacedPiece = { id, type: childType, transform };
     this.pieces.set(id, piece);
     this.order.push(id);
@@ -141,7 +168,6 @@ export class LayoutGraph {
         );
       }
     }
-    if (this.selectedId === id) this.selectedId = null;
   }
 
   // Deletes a piece and, since removing it would otherwise orphan anything
@@ -223,5 +249,32 @@ export class LayoutGraph {
       }
     }
     return pairs;
+  }
+
+  serialize(): SerializedLayout {
+    const actions: SerializedAction[] = this.order.map((id) => {
+      const piece = this.pieces.get(id)!;
+      const att = this.attachmentsByChild.get(id);
+      if (!att) return { id, type: piece.type };
+      return {
+        id,
+        type: piece.type,
+        parent: { pieceId: att.parentPieceId, portId: att.parentPortId },
+        childPortId: att.childPortId,
+      };
+    });
+    return { version: 1, actions };
+  }
+
+  static fromSerialized(data: SerializedLayout): LayoutGraph {
+    const graph = new LayoutGraph();
+    for (const action of data.actions) {
+      if (!action.parent) {
+        graph.placeRoot(action.type, action.id);
+      } else {
+        graph.attach(action.parent.pieceId, action.parent.portId, action.type, action.childPortId!, action.id);
+      }
+    }
+    return graph;
   }
 }

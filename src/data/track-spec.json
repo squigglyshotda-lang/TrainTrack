@@ -5,7 +5,7 @@
       "torwan, 'IKEA- & BRIO- & others- compatible train tracks generator', OpenSCAD source, GitHub mirror of Thingiverse thing:5598668: https://github.com/torwanbukaj/ikea-brio-others-compatible-train-tracks-generator/blob/master/src/train_tracks_generator.scad (Thingiverse itself and MakerWorld were both unreachable from this build environment's network policy, so the GitHub mirror of the same author's repo was used instead)",
       "CavemanDesigns BRIO track customizer, MakerWorld model 1099116 — NOT YET consulted; blocked by network policy, see note below"
     ],
-    "note_on_makerworld": "The task asked for dimensions from both torwan's OpenSCAD generator and CavemanDesigns' MakerWorld customizer. This sandbox's network policy blocks both thingiverse.com and makerworld.com outright (confirmed: proxy returns 403 on the CONNECT tunnel, not a site-side error). torwan's generator happens to have a GitHub mirror, so its numbers are real and sourced. CavemanDesigns' customizer does not appear to have an accessible mirror, so Phase 1 relies on torwan's numbers alone. Phase 2a (bundling the 91 pre-made STLs) will need the actual CavemanDesigns files, which will have to be fetched some other way — ask the user to download and hand them over, or open up network access to makerworld.com."
+    "note_on_makerworld": "The task asked for dimensions from both torwan's OpenSCAD generator and CavemanDesigns' MakerWorld customizer. This sandbox's network policy blocks both thingiverse.com and makerworld.com outright (confirmed: proxy returns 403 on the CONNECT tunnel, not a site-side error). torwan's generator happens to have a GitHub mirror, so its numbers are real and sourced. CavemanDesigns' customizer does not appear to have an accessible mirror. Decision (confirmed with the user): Phase 2a uses torwan's own pre-generated STL files (in pre-generated_parts_stl/brio/ of that same repo) instead of CavemanDesigns' set. See src/data/stlLibrary.ts for exactly which file backs each piece type."
   },
 
   "trackProfile": {
@@ -35,10 +35,10 @@
 
   "pieces": {
     "straight": {
-      "lengthMm": { "value": 145, "source": "scad file header comment, line 20-21: 'Standard lengths of the Brio straight tracks (without a plug): 145mm.' This is the only length the source calls out as the Brio standard, so it's used as the full-size straight." }
+      "lengthMm": { "value": 100, "source": "pre-generated_parts_stl/brio/train_tracks_brio_straight100mm_NP.stl. Chosen over the header comment's '145mm standard Brio length' (used in an earlier draft of this file) because 100mm has an actual ready-made STL file behind it for Phase 2a export, and the 145mm figure did not; confirmed with the user." }
     },
     "halfStraight": {
-      "lengthMm": { "value": 72.5, "source": "DERIVED, not directly sourced. The .scad file gives no explicit 'half straight' length. This is half of pieces.straight.lengthMm (145mm / 2). The source's own pre-generated example files do use a halving pattern for straights (straight100mm / straight50mm / straight25mm in pre-generated_parts_stl/brio/), which supports halving as a reasonable approach, but this specific number has not been checked against a real half-straight piece. If you have one, measure it with calipers and correct this value.", "derived": true }
+      "lengthMm": { "value": 50, "source": "pre-generated_parts_stl/brio/train_tracks_brio_straight50mm_NP.stl — exactly half of pieces.straight.lengthMm, and a real pre-generated file in its own right (not derived by halving)." }
     },
     "curve45": {
       "radiusMm": { "value": 86, "source": "scad line 18-19 comment: 'Arc parameters used in J'adore system... 45deg, inner radius 86mm'. Corroborated by the author's own pre-generated file pre-generated_parts_stl/brio/train_tracks_brio_arc45deg_r86_b_NP.stl, which uses r86 for the actual Brio-folder curve." },
@@ -62,5 +62,16 @@
     "_comment": "These are not physical measurements — they're UX tolerances chosen per the project brief, which notes that real BRIO track flexes 2-3mm at the Vario joins. Tune these here if closure detection feels too strict or too loose.",
     "positionToleranceMm": { "value": 4, "note": "slightly more generous than the 2-3mm of real joint flex, so genuine closures aren't missed" },
     "headingToleranceDeg": { "value": 6, "note": "allows for the same flex expressed as a small angular error" }
+  },
+
+  "printBed": {
+    "_comment": "Phase 3 print-bed check. Not a piece dimension — this is a printer property, so it's a plain constant rather than something 'sourced' from the track generator. Change it here if your printer's bed is a different size.",
+    "widthMm": { "value": 256 },
+    "depthMm": { "value": 256 }
+  },
+
+  "material": {
+    "_comment": "Used only for the 'mass if printed solid' figure in the sidebar — NOT a sourced measurement like the rest of this file. 1.24 g/cm3 is the commonly published density for PLA filament, broadly consistent across filament manufacturers' technical data sheets, not a number pulled from torwan's or CavemanDesigns' files. Real filament use also depends heavily on infill percentage and wall/shell settings, which this app has no way to know — see the sidebar's own caveat text before trusting this number.",
+    "plaDensityGPerCm3": { "value": 1.24 }
   }
 }
