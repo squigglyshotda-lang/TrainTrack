@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import { PIECE_DEFS_BY_TYPE } from "../data/pieceDefs";
+import { polygonToPath } from "../model/svgPath";
 import type { LayoutGraph, FreePortInfo, ClosurePair } from "../model/graph";
 
 interface View {
@@ -16,12 +17,6 @@ interface CanvasProps {
   onEmptyCanvasClick: (screenPos: { x: number; y: number }) => void;
   selectedId: string | null;
   closures: ClosurePair[];
-}
-
-function polygonToPath(points: { x: number; y: number }[]): string {
-  if (points.length === 0) return "";
-  const [first, ...rest] = points;
-  return `M ${first.x},${first.y} ` + rest.map((p) => `L ${p.x},${p.y}`).join(" ") + " Z";
 }
 
 const PEG_COLOR = "var(--peg)";

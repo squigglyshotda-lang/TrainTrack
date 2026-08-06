@@ -21,9 +21,15 @@ target port, facing the opposite direction with the opposite gender.
 On-screen position is always derived from that graph, never stored
 separately.
 
-- Click a free port, pick a piece from the popup, it attaches.
+- Click a free port, pick a piece from the popup, it attaches. The popup
+  and the permanent "Piece Library" panel on the left both show a real
+  thumbnail of each piece's shape — not just its name.
 - Free ports are colored circles (solid = peg, ring = socket); occupied
   ports fade to small gray dots.
+- "Start from a Template" loads a pre-built, pre-verified loop (built and
+  closure-checked with the actual graph engine, not hand-derived) — a
+  tight circle, a stadium oval, or an oval with a siding branching off a
+  4-way crossing.
 - The bill of materials in the sidebar updates live, split into pieces you
   already own (set in "My Inventory") versus pieces still to print.
 - A loop is "closed" when two free ports land within a few mm of each
@@ -43,12 +49,17 @@ where it came from. Nothing is guessed — see that file's `_meta` block for
 sourcing notes, including which values are real measurements versus the
 handful that are project-chosen constants (tolerances, bed size).
 
-`src/data/pieceDefs.ts` turns those numbers into the six starter piece
-types (ports + outline shapes). `src/data/stlLibrary.ts` maps each piece
+`src/data/pieceDefs.ts` turns those numbers into all twelve piece types
+(ports + outline shapes): straight, half straight, short straight, 45°
+and 90° curves (each with an opposite-hand version), a Y-turnout, a
+curve+straight turnout (with an opposite-hand version), a 4-way crossing,
+and a dogbone connector (joins two socket-ended pieces facing each other —
+the one case no ordinary piece can handle, since every ordinary piece has
+exactly one peg and one socket). `src/data/stlLibrary.ts` maps each piece
 type to the real STL file that prints it (from torwan's generator repo —
-see its comments for exactly which file, and how the one missing
-opposite-hand curve was derived by mirroring). Nothing in the UI hardcodes
-a dimension or a file path.
+see its comments for exactly which file, and how the opposite-hand pieces
+without a matching pre-generated file were derived by mirroring). Nothing
+in the UI hardcodes a dimension or a file path.
 
 ## Exporting
 
@@ -73,7 +84,7 @@ a piece-type addition, so it's being left for a focused follow-up instead
 of a rushed bolt-on.
 
 **Phase 2b (live OpenSCAD-in-the-browser generation).** Not attempted.
-Phase 2a's static library already covers all six Phase 1 piece types, so
+Phase 2a's static library already covers every piece type in the app, so
 there's been no concrete need yet for custom-parameter generation
 (arbitrary radius, custom length, name engraving).
 

@@ -1,9 +1,17 @@
 @font-face {
-  font-family: "Big Shoulders Display";
+  font-family: "Fredoka";
   font-style: normal;
-  font-weight: 700;
+  font-weight: 400 700;
   font-display: swap;
-  src: url("/fonts/bsd700.woff2") format("woff2");
+  src: url("/fonts/fredoka-var.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/nunito-var.woff2") format("woff2");
 }
 
 @font-face {
@@ -23,23 +31,37 @@
 }
 
 :root {
-  /* Light: oat-paper drafting sheet + cyanotype-blue ink */
-  --bg: #f1ead9;
+  /* Light: cream + coral, playful-toy-shelf palette */
+  --bg: #fbf6ec;
   --surface: #ffffff;
-  --surface-2: #e9dfc7;
-  --ink: #2a2417;
-  --muted: #8a7f68;
-  --line: #cbbfa0;
-  --accent: #2c5f8a;
-  --accent-strong: #1d4a70;
-  --accent-soft: #dceaf4;
-  --peg: #b5792b;
-  --socket: #2f6e5b;
-  --success: #2f7a52;
-  --shadow: rgba(42, 36, 23, 0.16);
+  --surface-2: #f4ecda;
+  --ink: #332b22;
+  --muted: #948a78;
+  --line: #ece2cc;
+  --accent: #ff6a4d;
+  --accent-strong: #e6512f;
+  --accent-soft: #ffe3d9;
+  --peg: #f5a623;
+  --socket: #17b897;
+  --success: #2fae72;
+  --shadow: rgba(80, 55, 20, 0.14);
 
-  --font-display: "Big Shoulders Display", "Arial Narrow", sans-serif;
-  --font-body: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Pastel family cycled across the piece palette / picker cards */
+  --pastel-1-bg: #fff1c2;
+  --pastel-1-ink: #8a5a12;
+  --pastel-2-bg: #e4dcff;
+  --pastel-2-ink: #5b4796;
+  --pastel-3-bg: #ffd9e6;
+  --pastel-3-ink: #a13c62;
+  --pastel-4-bg: #d3f3e3;
+  --pastel-4-ink: #1f7a52;
+  --pastel-5-bg: #d6ecfb;
+  --pastel-5-ink: #2969a3;
+  --pastel-6-bg: #ffe1cc;
+  --pastel-6-ink: #b5551b;
+
+  --font-display: "Fredoka", "Baloo 2", sans-serif;
+  --font-body: "Nunito", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   color-scheme: light;
@@ -47,55 +69,93 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Dark: the same drafting table after hours */
-    --bg: #1b1811;
-    --surface: #242019;
-    --surface-2: #2c271d;
-    --ink: #ede4cf;
-    --muted: #a79c82;
-    --line: #4a4331;
-    --accent: #6fb3e0;
-    --accent-strong: #8fc6ea;
-    --accent-soft: #24384a;
-    --peg: #d99a44;
-    --socket: #4fa98a;
-    --success: #5bbe85;
+    /* Dark: the same toy shelf with the lights down */
+    --bg: #221c2c;
+    --surface: #2c2438;
+    --surface-2: #362c46;
+    --ink: #f6efe4;
+    --muted: #b3a6c4;
+    --line: #423656;
+    --accent: #ff8a6b;
+    --accent-strong: #ffab8f;
+    --accent-soft: #4a2e28;
+    --peg: #ffbf5c;
+    --socket: #3fd8b3;
+    --success: #5cd393;
     --shadow: rgba(0, 0, 0, 0.45);
+
+    --pastel-1-bg: #4a3f1f;
+    --pastel-1-ink: #ffd873;
+    --pastel-2-bg: #3a3160;
+    --pastel-2-ink: #cdbdff;
+    --pastel-3-bg: #4a2c3a;
+    --pastel-3-ink: #ffb0cc;
+    --pastel-4-bg: #1f3f33;
+    --pastel-4-ink: #8fe8bf;
+    --pastel-5-bg: #223c4d;
+    --pastel-5-ink: #92cdf5;
+    --pastel-6-bg: #4a3222;
+    --pastel-6-ink: #ffbd8a;
+
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #1b1811;
-  --surface: #242019;
-  --surface-2: #2c271d;
-  --ink: #ede4cf;
-  --muted: #a79c82;
-  --line: #4a4331;
-  --accent: #6fb3e0;
-  --accent-strong: #8fc6ea;
-  --accent-soft: #24384a;
-  --peg: #d99a44;
-  --socket: #4fa98a;
-  --success: #5bbe85;
+  --bg: #221c2c;
+  --surface: #2c2438;
+  --surface-2: #362c46;
+  --ink: #f6efe4;
+  --muted: #b3a6c4;
+  --line: #423656;
+  --accent: #ff8a6b;
+  --accent-strong: #ffab8f;
+  --accent-soft: #4a2e28;
+  --peg: #ffbf5c;
+  --socket: #3fd8b3;
+  --success: #5cd393;
   --shadow: rgba(0, 0, 0, 0.45);
+  --pastel-1-bg: #4a3f1f;
+  --pastel-1-ink: #ffd873;
+  --pastel-2-bg: #3a3160;
+  --pastel-2-ink: #cdbdff;
+  --pastel-3-bg: #4a2c3a;
+  --pastel-3-ink: #ffb0cc;
+  --pastel-4-bg: #1f3f33;
+  --pastel-4-ink: #8fe8bf;
+  --pastel-5-bg: #223c4d;
+  --pastel-5-ink: #92cdf5;
+  --pastel-6-bg: #4a3222;
+  --pastel-6-ink: #ffbd8a;
   color-scheme: dark;
 }
 
 :root[data-theme="light"] {
-  --bg: #f1ead9;
+  --bg: #fbf6ec;
   --surface: #ffffff;
-  --surface-2: #e9dfc7;
-  --ink: #2a2417;
-  --muted: #8a7f68;
-  --line: #cbbfa0;
-  --accent: #2c5f8a;
-  --accent-strong: #1d4a70;
-  --accent-soft: #dceaf4;
-  --peg: #b5792b;
-  --socket: #2f6e5b;
-  --success: #2f7a52;
-  --shadow: rgba(42, 36, 23, 0.16);
+  --surface-2: #f4ecda;
+  --ink: #332b22;
+  --muted: #948a78;
+  --line: #ece2cc;
+  --accent: #ff6a4d;
+  --accent-strong: #e6512f;
+  --accent-soft: #ffe3d9;
+  --peg: #f5a623;
+  --socket: #17b897;
+  --success: #2fae72;
+  --shadow: rgba(80, 55, 20, 0.14);
+  --pastel-1-bg: #fff1c2;
+  --pastel-1-ink: #8a5a12;
+  --pastel-2-bg: #e4dcff;
+  --pastel-2-ink: #5b4796;
+  --pastel-3-bg: #ffd9e6;
+  --pastel-3-ink: #a13c62;
+  --pastel-4-bg: #d3f3e3;
+  --pastel-4-ink: #1f7a52;
+  --pastel-5-bg: #d6ecfb;
+  --pastel-5-ink: #2969a3;
+  --pastel-6-bg: #ffe1cc;
+  --pastel-6-ink: #b5551b;
   color-scheme: light;
 }
 
@@ -144,8 +204,8 @@ button {
   justify-content: space-between;
   flex-wrap: wrap;
   row-gap: 8px;
-  padding: 12px 18px;
-  border-bottom: 2px solid var(--line);
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
   background: var(--surface);
 }
 
@@ -160,17 +220,19 @@ button {
 .toolbar-title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 21px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-size: 24px;
   color: var(--ink);
 }
 
 .toolbar-phase {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
   letter-spacing: 0.02em;
-  color: var(--muted);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 3px 10px;
 }
 
 .toolbar-actions {
@@ -190,34 +252,37 @@ button {
 
 .toolbar-actions button,
 .piece-picker button {
-  border: 1px solid var(--line);
+  border: 1.5px solid var(--line);
   background: var(--surface);
   color: var(--ink);
-  border-radius: 4px;
-  padding: 6px 13px;
+  border-radius: 999px;
+  padding: 7px 15px;
+  font-family: var(--font-body);
+  font-weight: 700;
   font-size: 13px;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.12s ease, border-color 0.12s ease;
+  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
 }
 
 .toolbar-actions button:hover:not(:disabled),
 .piece-picker button:hover {
   background: var(--surface-2);
   border-color: var(--muted);
+  transform: translateY(-1px);
 }
 
 .toolbar-actions button:disabled {
   color: var(--muted);
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .toolbar-export {
   background: var(--accent) !important;
   border-color: var(--accent) !important;
-  color: var(--surface) !important;
-  font-weight: 600;
+  color: #ffffff !important;
 }
 
 .toolbar-export:hover:not(:disabled) {
@@ -236,9 +301,10 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 18px;
-  background: color-mix(in srgb, #b3413c 14%, var(--surface));
+  padding: 8px 20px;
+  background: color-mix(in srgb, #d9534f 14%, var(--surface));
   color: #b3413c;
+  font-weight: 700;
   font-size: 13px;
   border-bottom: 1px solid var(--line);
 }
@@ -248,7 +314,7 @@ button {
   background: none;
   color: inherit;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1;
 }
 
@@ -258,13 +324,25 @@ button {
   min-height: 0;
 }
 
+.left-panel {
+  width: 280px;
+  flex: none;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+  padding: 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .canvas-container {
   flex: 1;
   position: relative;
   overflow: hidden;
   background: var(--bg);
-  background-image: radial-gradient(circle, var(--line) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(circle, var(--line) 1.6px, transparent 1.6px);
+  background-size: 26px 26px;
   background-position: -1px -1px;
 }
 
@@ -280,27 +358,28 @@ button {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: var(--muted);
-  font-size: 14px;
-  font-family: var(--font-mono);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
   pointer-events: none;
   background: var(--surface);
-  border: 1px dashed var(--line);
-  padding: 10px 16px;
-  border-radius: 6px;
+  border: 2px dashed var(--line);
+  padding: 12px 20px;
+  border-radius: 16px;
 }
 
 .piece-outline {
   fill: var(--surface);
   stroke: var(--line);
-  stroke-width: 1.2;
+  stroke-width: 1.6;
   vector-effect: non-scaling-stroke;
   transition: fill 0.12s ease, stroke 0.12s ease;
 }
 
 .piece-outline-selected {
   stroke: var(--accent);
-  stroke-width: 2.4;
+  stroke-width: 2.6;
   fill: var(--accent-soft);
 }
 
@@ -310,34 +389,32 @@ button {
 
 .port-occupied {
   fill: var(--line);
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .closure-line {
   stroke: var(--success);
-  stroke-width: 1.5;
-  stroke-dasharray: 4 3;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
   vector-effect: non-scaling-stroke;
 }
 
 .sidebar {
   width: 300px;
-  border-left: 2px solid var(--line);
+  flex: none;
+  border-left: 1px solid var(--line);
   background: var(--surface);
   padding: 18px;
   overflow-y: auto;
 }
 
-.sidebar h2 {
+.sidebar h2,
+.left-panel h2 {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 15px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-weight: 600;
+  font-size: 16px;
   color: var(--ink);
   margin: 0 0 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--line);
 }
 
 .sidebar section {
@@ -356,12 +433,13 @@ button {
 }
 
 .bom-table td {
-  padding: 5px 0;
+  padding: 6px 0;
   border-bottom: 1px solid var(--surface-2);
 }
 
 .bom-table td:first-child {
   color: var(--ink);
+  font-weight: 600;
 }
 
 .bom-count {
@@ -373,9 +451,9 @@ button {
 
 .bom-total td {
   border-bottom: none;
-  border-top: 1.5px solid var(--line);
-  font-weight: 600;
-  padding-top: 8px;
+  border-top: 2px solid var(--line);
+  font-weight: 800;
+  padding-top: 9px;
 }
 
 .bom-total .bom-count {
@@ -383,6 +461,7 @@ button {
 }
 
 .bom-header-row td {
+  font-family: var(--font-display);
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -393,7 +472,7 @@ button {
 
 .bom-flag {
   margin-left: 5px;
-  color: #b3413c;
+  color: #d9534f;
   cursor: help;
 }
 
@@ -402,14 +481,16 @@ button {
   font-family: var(--font-mono);
   font-size: 10.5px;
   color: var(--muted);
+  font-weight: 400;
 }
 
 .bom-bed-warning {
   margin: 10px 0 0;
-  padding: 8px 10px;
-  border-radius: 4px;
-  background: color-mix(in srgb, #b3413c 12%, transparent);
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #d9534f 12%, transparent);
   color: #b3413c;
+  font-weight: 700;
   font-size: 12px;
 }
 
@@ -421,7 +502,7 @@ button {
 .material-value {
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 17px;
+  font-size: 19px;
   color: var(--accent-strong);
   font-variant-numeric: tabular-nums;
 }
@@ -444,11 +525,12 @@ button {
 }
 
 .inventory-table td {
-  padding: 4px 0;
+  padding: 5px 0;
 }
 
 .inventory-table td:first-child {
   color: var(--ink);
+  font-weight: 600;
 }
 
 .inventory-table input {
@@ -456,11 +538,11 @@ button {
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  border: 1px solid var(--line);
-  border-radius: 4px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
   background: var(--surface);
   color: var(--ink);
-  padding: 3px 6px;
+  padding: 4px 8px;
   float: right;
 }
 
@@ -478,11 +560,12 @@ button {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 5px 8px;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--success) 12%, transparent);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--success) 16%, transparent);
   color: var(--success);
   font-family: var(--font-mono);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
@@ -495,14 +578,139 @@ button {
   flex: none;
 }
 
+/* --- Piece thumbnails (shared by the Palette and the port-click picker) --- */
+
+.piece-thumb {
+  display: block;
+}
+
+.piece-thumb-outline {
+  fill: var(--surface);
+  stroke: currentColor;
+  stroke-width: 3;
+  opacity: 0.55;
+}
+
+/* --- Palette (permanent piece library, left panel) --- */
+
+.palette-hint {
+  margin: -4px 0 12px;
+  line-height: 1.4;
+}
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.palette-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px 8px;
+  border: none;
+  border-radius: 16px;
+  background: var(--pastel-1-bg);
+  color: var(--pastel-1-ink);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.palette-card:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.palette-card:not(:disabled):hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 14px var(--shadow);
+}
+
+.palette-card .piece-thumb-outline {
+  color: currentColor;
+}
+
+.palette-card-label {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 11.5px;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.palette-grid .palette-card:nth-child(6n+2) {
+  background: var(--pastel-2-bg);
+  color: var(--pastel-2-ink);
+}
+.palette-grid .palette-card:nth-child(6n+3) {
+  background: var(--pastel-3-bg);
+  color: var(--pastel-3-ink);
+}
+.palette-grid .palette-card:nth-child(6n+4) {
+  background: var(--pastel-4-bg);
+  color: var(--pastel-4-ink);
+}
+.palette-grid .palette-card:nth-child(6n+5) {
+  background: var(--pastel-5-bg);
+  color: var(--pastel-5-ink);
+}
+.palette-grid .palette-card:nth-child(6n+6) {
+  background: var(--pastel-6-bg);
+  color: var(--pastel-6-ink);
+}
+
+/* --- Templates panel --- */
+
+.templates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.template-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.12s ease, transform 0.08s ease;
+}
+
+.template-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.template-card-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.template-card-desc {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* --- Piece picker popover (click a free port) --- */
+
 .piece-picker {
   position: fixed;
   z-index: 10;
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  box-shadow: 0 10px 28px var(--shadow);
-  width: 230px;
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 14px 32px var(--shadow);
+  width: 280px;
   overflow: hidden;
 }
 
@@ -510,13 +718,11 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 9px 12px;
+  padding: 10px 14px;
   font-family: var(--font-display);
   font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--muted);
+  font-weight: 600;
+  color: var(--ink);
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
 }
@@ -528,8 +734,7 @@ button {
   cursor: pointer;
   font-size: 13px;
   font-family: var(--font-body);
-  text-transform: none;
-  letter-spacing: normal;
+  font-weight: 700;
   padding: 0;
   color: var(--muted);
 }
@@ -548,17 +753,55 @@ button {
   border: none;
   background: none;
   padding: 8px 10px;
-  border-radius: 4px;
+  border-radius: 10px;
   font-size: 13px;
-  border-left: 2px solid transparent;
 }
 
 .piece-picker-list li button:hover {
   background: var(--accent-soft);
-  border-left-color: var(--accent);
+}
+
+.piece-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+/* .piece-picker button's pill styling otherwise wins on specificity over
+   .palette-card's — restore the colorful card look inside the popover too. */
+.piece-picker-grid.piece-picker-grid button.palette-card {
+  border: none;
+  border-radius: 16px;
+  background: var(--pastel-1-bg);
+  color: var(--pastel-1-ink);
+  padding: 10px 6px 8px;
+}
+.piece-picker-grid button.palette-card:nth-child(6n+2) {
+  background: var(--pastel-2-bg);
+  color: var(--pastel-2-ink);
+}
+.piece-picker-grid button.palette-card:nth-child(6n+3) {
+  background: var(--pastel-3-bg);
+  color: var(--pastel-3-ink);
+}
+.piece-picker-grid button.palette-card:nth-child(6n+4) {
+  background: var(--pastel-4-bg);
+  color: var(--pastel-4-ink);
+}
+.piece-picker-grid button.palette-card:nth-child(6n+5) {
+  background: var(--pastel-5-bg);
+  color: var(--pastel-5-ink);
+}
+.piece-picker-grid button.palette-card:nth-child(6n+6) {
+  background: var(--pastel-6-bg);
+  color: var(--pastel-6-ink);
 }
 
 .piece-picker-empty {
+  grid-column: 1 / -1;
   padding: 8px 10px;
   color: var(--muted);
   font-size: 13px;

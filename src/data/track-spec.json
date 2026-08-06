@@ -55,6 +55,26 @@
       "_comment": "Two straight arms crossing at 90 degrees, each arm peg-ended on one side and socket-ended on the other.",
       "armLengthMm": { "value": 100, "source": "pre-generated_parts_stl/brio/train_tracks_brio_intersect_90deg_100mmNP_100mmNP_b.stl — both arms 100mm, both NP (one nest end, one plug end), 90 degree crossing" },
       "angleDeg": { "value": 90, "source": "same file" }
+    },
+    "shortStraight": {
+      "lengthMm": { "value": 25, "source": "pre-generated_parts_stl/brio/train_tracks_brio_straight25mm_NP.stl, measured off the mesh's own bounding box (25mm along the rail from the nest face to the plug neck)" }
+    },
+    "curve90": {
+      "radiusMm": { "value": 86, "source": "pre-generated_parts_stl/brio/train_tracks_brio_arc90deg_r86_b_NP.stl — same r86 radius as curve45, just swept through 90deg instead of 45deg" },
+      "angleDeg": { "value": 90, "source": "same file" }
+    },
+    "switchCurveStraight": {
+      "_comment": "An asymmetric turnout: the main line continues straight, a single branch curves off to one side. Different from switchY, which splits into two equal curved legs with no straight-through option.",
+      "straightLengthMm": { "value": 100, "source": "pre-generated_parts_stl/brio/train_tracks_brio_switch_90deg_r86mmN_s100mmN_cP_b.stl — filename decodes as: right leg 90deg/r86mm/nest-ended, straight leg 100mm/nest-ended, common end plug" },
+      "curveRadiusMm": { "value": 86, "source": "same file" },
+      "curveAngleDeg": { "value": 90, "source": "same file" },
+      "commonGender": { "value": "peg", "source": "same file: common end is 'P' (plug = peg)" },
+      "branchGender": { "value": "socket", "source": "same file: both the straight-through end and the curved branch end are 'N' (nest = socket)" }
+    },
+    "dogbone": {
+      "_comment": "A short connector with a peg at both ends (one slightly oversized), used to join two pieces that are both socket-ended and facing each other — something no ordinary piece can do, since every ordinary piece has exactly one peg and one socket. Not a standard commercial BRIO piece; a printable accessory from the same generator. It's just the connector housing, not a full-width track segment, so it gets its own (much narrower) width rather than trackProfile.widthMm.",
+      "lengthMm": { "value": 36.2, "source": "pre-generated_parts_stl/brio/train_tracks_brio_dogbone65.stl, measured off the mesh's own bounding box. (The '65' in the filename is the generator's internal radius parameter passed to the module, not the piece's printed length.)" },
+      "widthMm": { "value": 13, "source": "same file, measured off the mesh's own bounding box" }
     }
   },
 

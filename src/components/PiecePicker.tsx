@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PIECE_DEFS, PIECE_DEFS_BY_TYPE } from "../data/pieceDefs";
+import PieceThumbnail from "./PieceThumbnail";
 import type { Gender, Port } from "../model/types";
 
 interface PiecePickerProps {
@@ -21,8 +22,8 @@ export default function PiecePicker({ screenPos, requiredGender, onChoose, onCan
 
   const options = PIECE_DEFS.filter((def) => compatiblePorts(def.ports, requiredGender).length > 0);
 
-  const left = Math.min(screenPos.x, window.innerWidth - 260);
-  const top = Math.min(screenPos.y, window.innerHeight - 300);
+  const left = Math.min(screenPos.x, window.innerWidth - 300);
+  const top = Math.min(screenPos.y, window.innerHeight - 340);
   const style = { left: Math.max(8, left), top: Math.max(8, top) };
 
   if (pendingType) {
@@ -48,34 +49,36 @@ export default function PiecePicker({ screenPos, requiredGender, onChoose, onCan
   }
 
   return (
-    <div className="piece-picker" style={style}>
+    <div className="piece-picker piece-picker-grid-wrap" style={style}>
       <div className="piece-picker-header">
         <span>{requiredGender ? `Attach a piece (needs a ${requiredGender})` : "Place first piece"}</span>
         <button className="piece-picker-close" onClick={onCancel}>
           ×
         </button>
       </div>
-      <ul className="piece-picker-list">
+      <div className="piece-picker-grid">
         {options.map((def) => {
           const ports = compatiblePorts(def.ports, requiredGender);
           return (
-            <li key={def.type}>
-              <button
-                onClick={() => {
-                  // Placing the very first piece: no target port to match, so
-                  // which local port we "used" is irrelevant. Skip straight
-                  // to placing it.
-                  if (!requiredGender || ports.length === 1) onChoose(def.type, ports[0].id);
-                  else setPendingType(def.type);
-                }}
-              >
-                {def.label}
-              </button>
-            </li>
+            <button
+              key={def.type}
+              className="palette-card"
+              title={def.label}
+              onClick={() => {
+                // Placing the very first piece: no target port to match, so
+                // which local port we "used" is irrelevant. Skip straight
+                // to placing it.
+                if (!requiredGender || ports.length === 1) onChoose(def.type, ports[0].id);
+                else setPendingType(def.type);
+              }}
+            >
+              <PieceThumbnail def={def} size={44} />
+              <span className="palette-card-label">{def.shortLabel}</span>
+            </button>
           );
         })}
-        {options.length === 0 && <li className="piece-picker-empty">No compatible pieces</li>}
-      </ul>
+        {options.length === 0 && <p className="piece-picker-empty">No compatible pieces</p>}
+      </div>
     </div>
   );
 }

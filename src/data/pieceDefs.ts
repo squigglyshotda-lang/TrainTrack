@@ -79,6 +79,58 @@ function switchY(): PieceDef {
   };
 }
 
+// The asymmetric turnout: main line runs straight through, one branch
+// curves off. `mirrorBranch` flips which side the branch curves toward —
+// the common and straight-through ports never move, only the branch does.
+function switchCurveStraight(mirrorBranch: boolean): PieceDef {
+  const s = spec.pieces.switchCurveStraight;
+  const branchAngle = mirrorBranch ? -s.curveAngleDeg.value : s.curveAngleDeg.value;
+  const branch = curveArcEndpoint(s.curveRadiusMm.value, branchAngle);
+  const ports: Port[] = [
+    { id: "common", x: 0, y: 0, headingDeg: 180, gender: s.commonGender.value as Port["gender"] },
+    {
+      id: "through",
+      x: s.straightLengthMm.value,
+      y: 0,
+      headingDeg: 0,
+      gender: s.branchGender.value as Port["gender"],
+    },
+    {
+      id: "branch",
+      x: branch.x,
+      y: branch.y,
+      headingDeg: branchAngle,
+      gender: s.branchGender.value as Port["gender"],
+    },
+  ];
+  return {
+    type: mirrorBranch ? "switchCurveStraightMirror" : "switchCurveStraight",
+    label: mirrorBranch ? "Curve+Straight Switch (opposite hand)" : "Curve+Straight Switch",
+    shortLabel: mirrorBranch ? "Switch C+S (mirror)" : "Switch C+S",
+    ports,
+    outlines: [straightOutline(s.straightLengthMm.value), curveSectorOutline(s.curveRadiusMm.value, branchAngle)],
+  };
+}
+
+// A short accessory with a peg at BOTH ends, for joining two pieces that
+// are both socket-ended and facing each other — the one case an ordinary
+// piece (always one peg, one socket) can't handle.
+function dogbone(): PieceDef {
+  const length = spec.pieces.dogbone.lengthMm.value;
+  const width = spec.pieces.dogbone.widthMm.value;
+  const ports: Port[] = [
+    { id: "a", x: 0, y: 0, headingDeg: 180, gender: "peg" },
+    { id: "b", x: length, y: 0, headingDeg: 0, gender: "peg" },
+  ];
+  const outline: Point[] = [
+    { x: 0, y: -width / 2 },
+    { x: length, y: -width / 2 },
+    { x: length, y: width / 2 },
+    { x: 0, y: width / 2 },
+  ];
+  return { type: "dogbone", label: "Dogbone Connector", shortLabel: "Dogbone", ports, outlines: [outline] };
+}
+
 function crossing4(): PieceDef {
   const s = spec.pieces.crossing4;
   const half = s.armLengthMm.value / 2;
@@ -122,6 +174,24 @@ export const PIECE_DEFS: PieceDef[] = [
   ),
   switchY(),
   crossing4(),
+  straightLike("shortStraight", "Short Straight", "Short Straight", spec.pieces.shortStraight.lengthMm.value),
+  curveLike(
+    "curve90",
+    "90° Curve",
+    "Curve 90°",
+    spec.pieces.curve90.radiusMm.value,
+    spec.pieces.curve90.angleDeg.value
+  ),
+  curveLike(
+    "curve90Mirror",
+    "90° Curve (opposite hand)",
+    "Curve 90° (mirror)",
+    spec.pieces.curve90.radiusMm.value,
+    -spec.pieces.curve90.angleDeg.value
+  ),
+  switchCurveStraight(false),
+  switchCurveStraight(true),
+  dogbone(),
 ];
 
 export const PIECE_DEFS_BY_TYPE: Record<string, PieceDef> = Object.fromEntries(

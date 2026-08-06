@@ -3,10 +3,13 @@ import Canvas from "./components/Canvas";
 import PiecePicker from "./components/PiecePicker";
 import BOMPanel from "./components/BOMPanel";
 import InventoryPanel from "./components/InventoryPanel";
+import Palette from "./components/Palette";
+import TemplatesPanel from "./components/TemplatesPanel";
 import Toolbar from "./components/Toolbar";
 import { LayoutGraph } from "./model/graph";
 import type { FreePortInfo, SerializedLayout } from "./model/graph";
 import type { Gender } from "./model/types";
+import type { Template } from "./data/templates";
 import { exportBomAsZip } from "./model/exportStl";
 import { exportLayoutAsPdf } from "./model/exportPdf";
 import { buildShareUrl, readLayoutFromLocationHash } from "./model/shareLink";
@@ -110,6 +113,21 @@ export default function App() {
     }
     setPending(null);
     commit();
+  };
+
+  const handlePaletteSelectRoot = (type: string) => {
+    if (!graph.isEmpty()) return;
+    graph.placeRoot(type);
+    commit();
+  };
+
+  const handleUseTemplate = (template: Template) => {
+    if (!graph.isEmpty() && !window.confirm("This replaces your current layout. Continue?")) return;
+    const newGraph = LayoutGraph.fromSerialized(template.layout);
+    graphRef.current = newGraph;
+    setSelectedId(null);
+    setPending(null);
+    setHistory({ entries: [newGraph.serialize()], index: 0 });
   };
 
   const handleDeleteLast = () => {
@@ -249,6 +267,10 @@ export default function App() {
         </div>
       )}
       <div className="app-body">
+        <div className="left-panel">
+          <TemplatesPanel onUseTemplate={handleUseTemplate} />
+          <Palette isEmpty={graph.isEmpty()} onSelectRoot={handlePaletteSelectRoot} />
+        </div>
         <Canvas
           graph={graph}
           onPortClick={handlePortClick}
