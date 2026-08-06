@@ -1,0 +1,66 @@
+{
+  "_meta": {
+    "description": "Every physical dimension used by TrainTrack comes from this file. Nothing here is guessed — each value names the source it was read from. When a printed piece doesn't fit real track, this is the one file to fix.",
+    "sources": [
+      "torwan, 'IKEA- & BRIO- & others- compatible train tracks generator', OpenSCAD source, GitHub mirror of Thingiverse thing:5598668: https://github.com/torwanbukaj/ikea-brio-others-compatible-train-tracks-generator/blob/master/src/train_tracks_generator.scad (Thingiverse itself and MakerWorld were both unreachable from this build environment's network policy, so the GitHub mirror of the same author's repo was used instead)",
+      "CavemanDesigns BRIO track customizer, MakerWorld model 1099116 — NOT YET consulted; blocked by network policy, see note below"
+    ],
+    "note_on_makerworld": "The task asked for dimensions from both torwan's OpenSCAD generator and CavemanDesigns' MakerWorld customizer. This sandbox's network policy blocks both thingiverse.com and makerworld.com outright (confirmed: proxy returns 403 on the CONNECT tunnel, not a site-side error). torwan's generator happens to have a GitHub mirror, so its numbers are real and sourced. CavemanDesigns' customizer does not appear to have an accessible mirror, so Phase 1 relies on torwan's numbers alone. Phase 2a (bundling the 91 pre-made STLs) will need the actual CavemanDesigns files, which will have to be fetched some other way — ask the user to download and hand them over, or open up network access to makerworld.com."
+  },
+
+  "trackProfile": {
+    "widthMm": { "value": 40, "source": "track_width, scad line 39. Comment: 'Track dimensions (based on original IKEA Lillabo and BRIO tracks)'" },
+    "heightMm": { "value": 12, "source": "track_height, scad line 40" },
+    "wellDepthMm": { "value": 2.9, "source": "track_well_depth, scad line 41 (depth of the groove down the centre of the rail)" },
+    "wellWidthTopMm": { "value": 6.75, "source": "track_well_width_top, scad line 42" },
+    "wellWidthBottomMm": { "value": 4.75, "source": "track_well_width_bottom, scad line 43" },
+    "wellSpacingMm": { "value": 25.7, "source": "track_well_spacing, scad line 44 (centre-to-centre spacing of the two grooves)" },
+    "chamferMm": { "value": 1.5, "source": "track_chamfer, scad line 45" }
+  },
+
+  "connectors": {
+    "peg": {
+      "_comment": "The male connector, called 'plug' in the source. Every piece needs at least one of these to connect to a socket.",
+      "radiusMm": { "value": 6.25, "source": "brio_track_plug_radius, scad line 65, marked '(do not change)'" },
+      "neckWidthMm": { "value": 6.1, "source": "brio_track_plug_neck_width, scad line 67" },
+      "neckLengthMm": { "value": 12, "source": "brio_track_plug_neck_length, scad line 68" }
+    },
+    "socket": {
+      "_comment": "The female connector, called 'nest' in the source.",
+      "radiusMm": { "value": 6.4, "source": "brio_track_nest_radius, scad line 72, marked '(do not change)'" },
+      "neckWidthMm": { "value": 6.3, "source": "brio_track_nest_neck_width, scad line 73" },
+      "neckLengthMm": { "value": 12, "source": "brio_track_nest_neck_length, scad line 74" }
+    }
+  },
+
+  "pieces": {
+    "straight": {
+      "lengthMm": { "value": 145, "source": "scad file header comment, line 20-21: 'Standard lengths of the Brio straight tracks (without a plug): 145mm.' This is the only length the source calls out as the Brio standard, so it's used as the full-size straight." }
+    },
+    "halfStraight": {
+      "lengthMm": { "value": 72.5, "source": "DERIVED, not directly sourced. The .scad file gives no explicit 'half straight' length. This is half of pieces.straight.lengthMm (145mm / 2). The source's own pre-generated example files do use a halving pattern for straights (straight100mm / straight50mm / straight25mm in pre-generated_parts_stl/brio/), which supports halving as a reasonable approach, but this specific number has not been checked against a real half-straight piece. If you have one, measure it with calipers and correct this value.", "derived": true }
+    },
+    "curve45": {
+      "radiusMm": { "value": 86, "source": "scad line 18-19 comment: 'Arc parameters used in J'adore system... 45deg, inner radius 86mm'. Corroborated by the author's own pre-generated file pre-generated_parts_stl/brio/train_tracks_brio_arc45deg_r86_b_NP.stl, which uses r86 for the actual Brio-folder curve." },
+      "angleDeg": { "value": 45, "source": "same as above" }
+    },
+    "switchY": {
+      "_comment": "A symmetric Y-turnout: one common end, splitting into a left and a right branch, each the same curve as curve45.",
+      "legRadiusMm": { "value": 86, "source": "pre-generated_parts_stl/brio/train_tracks_brio_switch_l45deg_r86mmN_r45deg_r86mmN_cN_b.stl — filename decodes as left leg 45deg/r86mm/nest-ended, right leg 45deg/r86mm/nest-ended, common end nest, grooves on both sides" },
+      "legAngleDeg": { "value": 45, "source": "same file" },
+      "commonGender": { "value": "socket", "source": "same file: common end is 'N' (nest = socket)" },
+      "legGender": { "value": "socket", "source": "same file: both leg ends are 'N' (nest = socket)" }
+    },
+    "crossing4": {
+      "_comment": "Two straight arms crossing at 90 degrees, each arm peg-ended on one side and socket-ended on the other.",
+      "armLengthMm": { "value": 100, "source": "pre-generated_parts_stl/brio/train_tracks_brio_intersect_90deg_100mmNP_100mmNP_b.stl — both arms 100mm, both NP (one nest end, one plug end), 90 degree crossing" },
+      "angleDeg": { "value": 90, "source": "same file" }
+    }
+  },
+
+  "loopClosure": {
+    "_comment": "These are not physical measurements — they're UX tolerances chosen per the project brief, which notes that real BRIO track flexes 2-3mm at the Vario joins. Tune these here if closure detection feels too strict or too loose.",
+    "positionToleranceMm": { "value": 4, "note": "slightly more generous than the 2-3mm of real joint flex, so genuine closures aren't missed" },
+    "headingToleranceDeg": { "value": 6, "note": "allows for the same flex expressed as a small angular error" }
+  }
+}
