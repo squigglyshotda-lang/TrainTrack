@@ -54,6 +54,14 @@ export default function Canvas({
 
   const handleBackgroundPointerMove = (e: ReactPointerEvent<SVGSVGElement>) => {
     if (!dragState.current) return;
+    // Safety net: if a pointerup was ever missed (e.g. released over an
+    // element that stopped propagation before the background handler saw
+    // it), don't keep panning on every future mouse move with no button
+    // held.
+    if (e.buttons === 0) {
+      dragState.current = null;
+      return;
+    }
     const local = toLocal(e.clientX, e.clientY);
     const dx = local.x - dragState.current.startX;
     const dy = local.y - dragState.current.startY;
@@ -102,6 +110,7 @@ export default function Canvas({
               <g
                 key={piece.id}
                 transform={`translate(${piece.transform.x} ${piece.transform.y}) rotate(${piece.transform.rotationDeg})`}
+                onPointerDown={(e) => e.stopPropagation()}
                 onPointerUp={(e) => {
                   e.stopPropagation();
                   onPieceClick(piece.id);
@@ -147,6 +156,7 @@ export default function Canvas({
             <g
               key={`${fp.pieceId}:${fp.port.id}`}
               transform={`translate(${fp.worldPos.x} ${fp.worldPos.y})`}
+              onPointerDown={(e) => e.stopPropagation()}
               onPointerUp={(e) => {
                 e.stopPropagation();
                 const rect = containerRef.current?.getBoundingClientRect();
