@@ -254,6 +254,30 @@ export class LayoutGraph {
     return (this.childrenOf.get(id)?.length ?? 0) > 0;
   }
 
+  // World-space bounding box of every piece's actual outline (not just
+  // port positions), so a "fit to view" can frame the whole printed shape
+  // with nothing clipped. Null for an empty graph.
+  boundingBox(): { minX: number; minY: number; maxX: number; maxY: number } | null {
+    if (this.pieces.size === 0) return null;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const piece of this.pieces.values()) {
+      const def = PIECE_DEFS_BY_TYPE[piece.type];
+      for (const outline of def.outlines) {
+        for (const pt of outline) {
+          const world = applyTransform(piece.transform, pt);
+          if (world.x < minX) minX = world.x;
+          if (world.x > maxX) maxX = world.x;
+          if (world.y < minY) minY = world.y;
+          if (world.y > maxY) maxY = world.y;
+        }
+      }
+    }
+    return { minX, minY, maxX, maxY };
+  }
+
   occupiedPortKeys(): Set<string> {
     const set = new Set<string>();
     for (const att of this.attachmentsByChild.values()) {

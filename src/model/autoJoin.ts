@@ -10,7 +10,7 @@ import spec from "../data/track-spec.json";
 import { applyTransform, angleDiffDeg, distance, normalizeDeg, solveChildTransform, worldHeading } from "./geometry";
 import type { Point } from "./geometry";
 import type { Gender } from "./types";
-import type { LayoutGraph } from "./graph";
+import type { LayoutGraph, FreePortInfo } from "./graph";
 
 // Deliberately just the simple 2-port pieces, plus the hidden dogbone
 // (which only ever gets chosen when it's the sole way to bridge two
@@ -158,4 +158,21 @@ export function placeJoinPath(
     curPieceId = placed.id;
     curPortId = otherPort.id;
   }
+}
+
+// Every other free port that a join actually starting from `source` could
+// reach, keyed the same way selection state elsewhere in the app keys free
+// ports ("pieceId:portId"). Shared by Smart Join's source-select step and
+// the canvas's hover preview, so both always agree on what's reachable.
+export function findReachablePortKeys(graph: LayoutGraph, source: FreePortInfo): Set<string> {
+  const sourceKey = `${source.pieceId}:${source.port.id}`;
+  const start: RoutePort = { pos: source.worldPos, headingDeg: source.worldHeadingDeg, gender: source.port.gender };
+  const reachable = new Set<string>();
+  for (const fp of graph.freePorts()) {
+    const key = `${fp.pieceId}:${fp.port.id}`;
+    if (key === sourceKey) continue;
+    const target: RoutePort = { pos: fp.worldPos, headingDeg: fp.worldHeadingDeg, gender: fp.port.gender };
+    if (findJoinPath(start, target)) reachable.add(key);
+  }
+  return reachable;
 }

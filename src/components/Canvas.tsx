@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import { PIECE_DEFS_BY_TYPE, MIRROR_PARTNER } from "../data/pieceDefs";
 import { polygonToPath } from "../model/svgPath";
@@ -30,26 +30,73 @@ interface CanvasProps {
   joinMode: boolean;
   joinSourceKey: string | null;
   reachableKeys: Set<string>;
+  // Hover preview: lighter-weight than Smart Join, works without entering
+  // that mode at all — just "what could this port reach right now".
+  onPortHoverStart: (info: FreePortInfo) => void;
+  onPortHoverEnd: () => void;
+  hoverReachableKeys: Set<string>;
+}
+
+export interface CanvasHandle {
+  fitToView: () => void;
 }
 
 const PEG_COLOR = "var(--peg)";
 const SOCKET_COLOR = "var(--socket)";
 
-export default function Canvas({
-  graph,
-  onPortClick,
-  onDrawPathComplete,
-  onPieceClick,
-  onEmptyCanvasClick,
-  selectedId,
-  closures,
-  onFlipSelected,
-  onReplaceSelected,
-  onDeleteSelected,
-  joinMode,
-  joinSourceKey,
-  reachableKeys,
-}: CanvasProps) {
+// Real-world-scale background grid: a dot every GRID_MINOR_MM, a slightly
+// bolder line every GRID_MAJOR_MM (one straight piece's length), so the
+// canvas itself is a scale reference instead of decoration with no
+// relationship to the millimeters everything else on screen is measured
+// in. Drawn in world units inside the pan/zoom group, so it scales and
+// pans with the layout rather than sitting fixed on screen.
+const GRID_MINOR_MM = 25;
+const GRID_MAJOR_MM = 100;
+// Generous fixed extent (5m square) so the grid always covers the visible
+// area at any reasonable pan/zoom without recomputing per render.
+const GRID_EXTENT_MM = 5000;
+
+// A handful of "nice" round millimeter lengths to choose the on-screen
+// scale bar from, so it always reads a sensible number rather than
+// whatever a fixed pixel width happens to convert to.
+const SCALE_BAR_CANDIDATES_MM = [10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000];
+
+function pickScaleBarMm(scale: number): number {
+  let best = SCALE_BAR_CANDIDATES_MM[0];
+  let bestDiff = Infinity;
+  for (const mm of SCALE_BAR_CANDIDATES_MM) {
+    const px = mm * scale;
+    if (px < 40 || px > 220) continue;
+    const diff = Math.abs(px - 110);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = mm;
+    }
+  }
+  return best;
+}
+
+const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
+  {
+    graph,
+    onPortClick,
+    onDrawPathComplete,
+    onPieceClick,
+    onEmptyCanvasClick,
+    selectedId,
+    closures,
+    onFlipSelected,
+    onReplaceSelected,
+    onDeleteSelected,
+    joinMode,
+    joinSourceKey,
+    reachableKeys,
+    onPortHoverStart,
+    onPortHoverEnd,
+    hoverReachableKeys,
+  },
+  ref
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>({ scale: 1.6, tx: 400, ty: 300 });
   const dragState = useRef<{ startX: number; startY: number; origTx: number; origTy: number; moved: boolean } | null>(
@@ -134,8 +181,38 @@ export default function Canvas({
     });
   };
 
+  // Frames the whole layout's real outline (not just port positions) in
+  // the current viewport, with padding. Exposed imperatively rather than
+  // through the view state directly, since view is Canvas's own local
+  // concern — App.tsx just needs to trigger it from the toolbar.
+  useImperativeHandle(
+    ref,
+    () => ({
+      fitToView: () => {
+        const bbox = graph.boundingBox();
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!bbox || !rect || rect.width === 0 || rect.height === 0) return;
+        const PADDING_PX = 60;
+        const bboxWidth = Math.max(1, bbox.maxX - bbox.minX);
+        const bboxHeight = Math.max(1, bbox.maxY - bbox.minY);
+        const availWidth = Math.max(1, rect.width - PADDING_PX * 2);
+        const availHeight = Math.max(1, rect.height - PADDING_PX * 2);
+        const scale = Math.min(8, Math.max(0.2, Math.min(availWidth / bboxWidth, availHeight / bboxHeight)));
+        const centerX = (bbox.minX + bbox.maxX) / 2;
+        const centerY = (bbox.minY + bbox.maxY) / 2;
+        setView({
+          scale,
+          tx: rect.width / 2 - centerX * scale,
+          ty: rect.height / 2 - centerY * scale,
+        });
+      },
+    }),
+    [graph]
+  );
+
   const occupied = graph.occupiedPortKeys();
   const freePorts = graph.freePorts();
+  const scaleBarMm = pickScaleBarMm(view.scale);
 
   return (
     <div ref={containerRef} className="canvas-container">
@@ -146,7 +223,23 @@ export default function Canvas({
         onPointerUp={handleBackgroundPointerUp}
         onWheel={handleWheel}
       >
+        <defs>
+          <pattern id="grid-minor" width={GRID_MINOR_MM} height={GRID_MINOR_MM} patternUnits="userSpaceOnUse">
+            <circle cx={0} cy={0} r={1} className="grid-dot" />
+          </pattern>
+          <pattern id="grid-major" width={GRID_MAJOR_MM} height={GRID_MAJOR_MM} patternUnits="userSpaceOnUse">
+            <rect width={GRID_MAJOR_MM} height={GRID_MAJOR_MM} fill="url(#grid-minor)" />
+            <path d={`M ${GRID_MAJOR_MM} 0 L 0 0 0 ${GRID_MAJOR_MM}`} className="grid-major-line" fill="none" />
+          </pattern>
+        </defs>
         <g transform={`translate(${view.tx} ${view.ty}) scale(${view.scale})`}>
+          <rect
+            x={-GRID_EXTENT_MM}
+            y={-GRID_EXTENT_MM}
+            width={GRID_EXTENT_MM * 2}
+            height={GRID_EXTENT_MM * 2}
+            fill="url(#grid-major)"
+          />
           {[...graph.pieces.values()].map((piece) => {
             const def = PIECE_DEFS_BY_TYPE[piece.type];
             const isSelected = piece.id === selectedId;
@@ -207,6 +300,7 @@ export default function Canvas({
             const key = `${fp.pieceId}:${fp.port.id}`;
             const isJoinSource = key === joinSourceKey;
             const isReachable = reachableKeys.has(key);
+            const isHoverReachable = hoverReachableKeys.has(key);
             // Once a join source is picked, ports that Smart Join can't
             // actually connect to fade out instead of just sitting there
             // waiting to produce an error if clicked.
@@ -254,11 +348,14 @@ export default function Canvas({
                   }
                   onPortClick(fp, toScreen(fp.worldPos.x, fp.worldPos.y));
                 }}
+                onPointerEnter={() => onPortHoverStart(fp)}
+                onPointerLeave={onPortHoverEnd}
                 className="port-free"
                 style={isDimmed ? { opacity: 0.28 } : undefined}
               >
                 {isJoinSource && <circle r={9} className="port-join-ring" />}
                 {isReachable && !isJoinSource && <circle r={8} className="port-reachable-ring" />}
+                {!joinMode && isHoverReachable && <circle r={8} className="port-hover-reachable-ring" />}
                 {fp.port.gender === "peg" ? (
                   <circle r={4} fill={PEG_COLOR} />
                 ) : (
@@ -272,6 +369,11 @@ export default function Canvas({
           })}
         </g>
       </svg>
+
+      <div className="scale-bar">
+        <div className="scale-bar-line" style={{ width: scaleBarMm * view.scale }} />
+        <span>{scaleBarMm}mm</span>
+      </div>
 
       {graph.isEmpty() && (
         <div className="canvas-empty-hint">
@@ -296,4 +398,6 @@ export default function Canvas({
         })()}
     </div>
   );
-}
+});
+
+export default Canvas;

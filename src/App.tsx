@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Canvas from "./components/Canvas";
+import type { CanvasHandle } from "./components/Canvas";
 import PiecePicker from "./components/PiecePicker";
 import BOMPanel from "./components/BOMPanel";
 import InventoryPanel from "./components/InventoryPanel";
@@ -14,7 +15,7 @@ import { PIECE_DEFS_BY_TYPE } from "./data/pieceDefs";
 import { exportBomAsZip } from "./model/exportStl";
 import { exportLayoutAsPdf } from "./model/exportPdf";
 import { buildShareUrl, readLayoutFromLocationHash } from "./model/shareLink";
-import { findJoinPath, placeJoinPath } from "./model/autoJoin";
+import { findJoinPath, findReachablePortKeys, placeJoinPath } from "./model/autoJoin";
 import { fitDrawnPath } from "./model/drawFit";
 import type { Point } from "./model/geometry";
 import "./app.css";
@@ -37,6 +38,7 @@ interface HistoryState {
 interface SavedFile {
   layout: SerializedLayout;
   inventory?: Record<string, number>;
+  filamentCostPerKg?: number;
 }
 
 function opposite(g: Gender): Gender {
@@ -73,6 +75,7 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [inventory, setInventory] = useState<Record<string, number>>({});
+  const [filamentCostPerKg, setFilamentCostPerKg] = useState(0);
   const [shareStatus, setShareStatus] = useState<"idle" | "copied">("idle");
   // Smart Join: joinMode is the toolbar toggle; joinSource is the free port
   // picked as the start once it's on; reachableKeys is recomputed fresh
@@ -81,7 +84,13 @@ export default function App() {
   const [joinMode, setJoinMode] = useState(false);
   const [joinSource, setJoinSource] = useState<SelectedPort | null>(null);
   const [reachableKeys, setReachableKeys] = useState<Set<string>>(new Set());
+  // Hovering a free port (outside Smart Join, which already has its own
+  // stronger click-committed highlight) previews the same reachability
+  // check without picking anything — lets you check "what could connect
+  // here" without committing to the join flow first.
+  const [hoverReachableKeys, setHoverReachableKeys] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<CanvasHandle>(null);
   const closures = graph.detectClosures();
   const canUndo = history.index > 0;
   const canRedo = history.index < history.entries.length - 1;
@@ -90,6 +99,15 @@ export default function App() {
   const clearJoinSelection = () => {
     setJoinSource(null);
     setReachableKeys(new Set());
+  };
+
+  const handlePortHoverStart = (info: FreePortInfo) => {
+    if (joinMode) return;
+    setHoverReachableKeys(findReachablePortKeys(graph, info));
+  };
+
+  const handlePortHoverEnd = () => {
+    setHoverReachableKeys(new Set());
   };
 
   // Every mutation (place, attach, delete) funnels through here: snapshot
@@ -120,16 +138,7 @@ export default function App() {
   // autoJoin.ts) — the ports that come back positive are the only ones
   // Canvas will light up, so there's nothing left to click that could fail.
   const selectJoinSource = (info: FreePortInfo) => {
-    const sourceKey = `${info.pieceId}:${info.port.id}`;
-    const free = graph.freePorts();
-    const start = { pos: info.worldPos, headingDeg: info.worldHeadingDeg, gender: info.port.gender };
-    const reachable = new Set<string>();
-    for (const fp of free) {
-      const key = `${fp.pieceId}:${fp.port.id}`;
-      if (key === sourceKey) continue;
-      const target = { pos: fp.worldPos, headingDeg: fp.worldHeadingDeg, gender: fp.port.gender };
-      if (findJoinPath(start, target)) reachable.add(key);
-    }
+    const reachable = findReachablePortKeys(graph, info);
     setJoinSource({ pieceId: info.pieceId, portId: info.port.id });
     setReachableKeys(reachable);
     setBannerError(
@@ -354,7 +363,7 @@ export default function App() {
   };
 
   const handleSave = () => {
-    const data: SavedFile = { layout: graph.serialize(), inventory };
+    const data: SavedFile = { layout: graph.serialize(), inventory, filamentCostPerKg };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -405,6 +414,7 @@ export default function App() {
       setSelectedId(null);
       clearJoinSelection();
       setInventory(data.inventory ?? {});
+      setFilamentCostPerKg(data.filamentCostPerKg ?? 0);
       // Loading starts a fresh undo history at the loaded state, rather
       // than treating the load itself as one undoable step.
       setHistory({ entries: [newGraph.serialize()], index: 0 });
@@ -436,6 +446,8 @@ export default function App() {
         canJoin={graph.freePorts().length >= 2}
         joinMode={joinMode}
         onToggleJoinMode={handleToggleJoinMode}
+        canFitView={!graph.isEmpty()}
+        onFitView={() => canvasRef.current?.fitToView()}
       />
       <input
         ref={fileInputRef}
@@ -458,6 +470,7 @@ export default function App() {
           <Palette isEmpty={graph.isEmpty()} onSelectRoot={handlePaletteSelectRoot} />
         </div>
         <Canvas
+          ref={canvasRef}
           graph={graph}
           onPortClick={handlePortClick}
           onDrawPathComplete={handleDrawPathComplete}
@@ -467,13 +480,22 @@ export default function App() {
           joinMode={joinMode}
           joinSourceKey={joinSourceKey}
           reachableKeys={reachableKeys}
+          onPortHoverStart={handlePortHoverStart}
+          onPortHoverEnd={handlePortHoverEnd}
+          hoverReachableKeys={hoverReachableKeys}
           closures={closures}
           onFlipSelected={handleFlipSelected}
           onReplaceSelected={handleReplaceSelected}
           onDeleteSelected={handleDeleteSelected}
         />
         <div className="sidebar">
-          <BOMPanel graph={graph} closures={closures} inventory={inventory} />
+          <BOMPanel
+            graph={graph}
+            closures={closures}
+            inventory={inventory}
+            filamentCostPerKg={filamentCostPerKg}
+            onFilamentCostPerKgChange={setFilamentCostPerKg}
+          />
           <InventoryPanel inventory={inventory} onChange={setInventory} />
         </div>
       </div>

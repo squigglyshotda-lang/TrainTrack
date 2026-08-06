@@ -19,6 +19,8 @@ interface ToolbarProps {
   canJoin: boolean;
   joinMode: boolean;
   onToggleJoinMode: () => void;
+  canFitView: boolean;
+  onFitView: () => void;
 }
 
 export default function Toolbar({
@@ -42,6 +44,8 @@ export default function Toolbar({
   canJoin,
   joinMode,
   onToggleJoinMode,
+  canFitView,
+  onFitView,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
@@ -62,6 +66,10 @@ export default function Toolbar({
         </button>
         <button disabled={!canDeleteLast} onClick={onDeleteLast}>
           Delete Last Piece
+        </button>
+        <span className="toolbar-divider" aria-hidden="true" />
+        <button disabled={!canFitView} onClick={onFitView} title="Frame the whole layout in view">
+          ⊡ Fit View
         </button>
         <span className="toolbar-divider" aria-hidden="true" />
         <button

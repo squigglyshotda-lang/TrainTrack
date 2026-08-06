@@ -6,6 +6,8 @@ interface BOMPanelProps {
   graph: LayoutGraph;
   closures: ClosurePair[];
   inventory: Record<string, number>;
+  filamentCostPerKg: number;
+  onFilamentCostPerKgChange: (value: number) => void;
 }
 
 const BED_W = spec.printBed.widthMm.value;
@@ -22,7 +24,13 @@ function fitsOnBed(type: string): boolean {
   return a <= bedA && b <= bedB;
 }
 
-export default function BOMPanel({ graph, closures, inventory }: BOMPanelProps) {
+export default function BOMPanel({
+  graph,
+  closures,
+  inventory,
+  filamentCostPerKg,
+  onFilamentCostPerKgChange,
+}: BOMPanelProps) {
   const bom = graph.bom();
   const total = bom.reduce((sum, row) => sum + row.count, 0);
   const totalToPrint = bom.reduce((sum, row) => sum + Math.max(0, row.count - (inventory[row.type] ?? 0)), 0);
@@ -35,6 +43,7 @@ export default function BOMPanel({ graph, closures, inventory }: BOMPanelProps) 
     return sum + toPrint * (entry?.solidVolumeMm3 ?? 0);
   }, 0);
   const solidMassG = (solidVolumeMm3 / 1000) * PLA_DENSITY;
+  const filamentCost = (solidMassG / 1000) * filamentCostPerKg;
 
   return (
     <>
@@ -96,11 +105,32 @@ export default function BOMPanel({ graph, closures, inventory }: BOMPanelProps) 
               <span className="material-value">{solidMassG.toFixed(0)}g</span>
               <span className="muted"> PLA if printed 100% solid</span>
             </p>
+            <label className="material-cost-input">
+              <span>Filament cost, per kg</span>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                inputMode="decimal"
+                value={filamentCostPerKg === 0 ? "" : filamentCostPerKg}
+                placeholder="0.00"
+                onChange={(e) => onFilamentCostPerKgChange(Math.max(0, Number(e.target.value) || 0))}
+                aria-label="Filament cost per kilogram"
+              />
+            </label>
+            {filamentCostPerKg > 0 && (
+              <p className="material-figure">
+                <span className="material-value">≈ {filamentCost.toFixed(2)}</span>
+                <span className="muted"> for filament, same 100%-solid upper bound as above</span>
+              </p>
+            )}
             <p className="muted material-caveat">
               This is an upper bound computed from the actual mesh volume of the {totalToPrint} piece
               {totalToPrint === 1 ? "" : "s"} still needed — real usage depends on your slicer's infill and
-              wall settings, typically 20–60% of this figure. Print time isn't estimated: it depends on
-              your printer's speed, nozzle, and layer height, none of which this app knows.
+              wall settings, typically 20–60% of this figure (so filament cost too). Print time isn't
+              estimated: it depends on your printer's speed, nozzle, and layer height, none of which this
+              app knows. No currency is assumed — enter cost per kg in whatever currency you buy filament
+              in, and the total comes back in the same one.
             </p>
           </>
         )}

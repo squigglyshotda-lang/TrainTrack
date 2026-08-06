@@ -38,7 +38,19 @@ separately.
   downstream of it, since those pieces' positions only make sense relative
   to it.
 - Free ports are colored circles (solid = peg, ring = socket); occupied
-  ports fade to small gray dots.
+  ports fade to small gray dots. Hovering a free port lights up every other
+  free port it could actually reach (the same reachability check Smart
+  Join uses below), so you can check "what could connect here" without
+  committing to anything — a lighter, undashed ring than Smart Join's own,
+  so it reads as a preview rather than a selection.
+- The canvas background is a real grid, not decoration: dots every 25mm, a
+  bolder line every 100mm (one straight piece's length), drawn in world
+  units so it pans and zooms with the layout instead of sitting fixed on
+  screen. A scale bar in the bottom-left corner shows what a round
+  millimeter length looks like at the current zoom. **⊡ Fit View**
+  (toolbar) reframes the whole layout — handy after panning away, or after
+  a root delete leaves pieces sitting far from wherever the view happens
+  to be centered.
 - "Start from a Template" loads a pre-built, pre-verified loop (built and
   closure-checked with the actual graph engine, not hand-derived): a tight
   circle, a stadium oval, an oval with a siding, a switch yard, or a
@@ -68,6 +80,15 @@ separately.
   still opens the normal attach picker, same as always.
 - The bill of materials in the sidebar updates live, split into pieces you
   already own (set in "My Inventory") versus pieces still to print.
+  Entering a filament cost per kg (no currency assumed — whatever you
+  actually pay, in whatever currency) turns the existing "grams if printed
+  100% solid" figure into a matching cost estimate, with the same honest
+  upper-bound caveat: real usage is typically 20–60% of this once your
+  slicer's infill and walls are accounted for, so treat the cost the same
+  way. It's saved with the layout file, but not carried over when you
+  start a template (same treatment as "My Inventory" — your own numbers
+  shouldn't reset just because you tried a template, but a shared file's
+  numbers are that file's own).
 - A loop is "closed" when two free ports land within a few mm of each
   other, facing opposite directions with opposite genders — this is
   detected and reported (with the gap distance), never forced.
