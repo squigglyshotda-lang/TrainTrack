@@ -156,4 +156,50 @@ export const STL_LIBRARY: Record<string, StlLibraryEntry> = {
     heightMm: 12.0,
     solidVolumeMm3: 3430.7,
   },
+  crossing4Spur: {
+    type: "crossing4Spur",
+    fileName: "crossing4-spur.stl",
+    exportBaseName: "crossing-spur-90deg-100mm-40mm",
+    source: "pre-generated_parts_stl/brio/train_tracks_brio_intersect_90deg_100mmNP_40mmPP_b.stl, used unmodified",
+    footprintXMm: 118.25,
+    footprintYMm: 76.5,
+    heightMm: 12.0,
+    solidVolumeMm3: 42933.6,
+  },
+  pegCoupler: {
+    type: "pegCoupler",
+    fileName: "peg-coupler.stl",
+    exportBaseName: "peg-coupler-25mm",
+    source: "pre-generated_parts_stl/brio/train_tracks_brio_straight25mm_PP.stl, used unmodified",
+    footprintXMm: 61.5,
+    footprintYMm: 40.0,
+    heightMm: 12.0,
+    solidVolumeMm3: 14875.9,
+  },
+  snake: {
+    type: "snake",
+    fileName: "snake.stl",
+    exportBaseName: "snake-curve-r86mm",
+    source:
+      "pre-generated_parts_stl/brio/train_tracks_brio_snake_35_775deg_r86mm_l146mm_NP_b.stl, used unmodified",
+    footprintXMm: 80.0,
+    footprintYMm: 164.25,
+    heightMm: 12.0,
+    solidVolumeMm3: 49124.2,
+  },
+  snakeMirror: {
+    type: "snakeMirror",
+    fileName: "snake-mirror.stl",
+    exportBaseName: "snake-curve-r86mm-mirror",
+    source:
+      "No pre-generated opposite-hand file exists in the source repo, so this one was derived the same way " +
+      "as curve45Mirror: the snake mesh reflected across its lateral axis (X -> -X, not Y -> -Y like the " +
+      "other mirrors, since this file's length axis is Y rather than X) with triangle winding and normals " +
+      "corrected to match. Verified by checking the mirrored mesh's bounding box flipped on X as expected " +
+      "and its signed volume (49124.2mm^3) stayed identical.",
+    footprintXMm: 80.0,
+    footprintYMm: 164.25,
+    heightMm: 12.0,
+    solidVolumeMm3: 49124.2,
+  },
 };

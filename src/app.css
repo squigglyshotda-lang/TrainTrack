@@ -399,6 +399,18 @@ button {
   vector-effect: non-scaling-stroke;
 }
 
+.draw-path-preview {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 2 7;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
 .sidebar {
   width: 300px;
   flex: none;
@@ -848,7 +860,7 @@ button {
   background: color-mix(in srgb, #b3413c 14%, transparent) !important;
 }
 
-/* --- Shift-select two ports + auto-join --- */
+/* --- Smart Join: pick a source port, only reachable ports light up --- */
 
 .port-join-ring {
   fill: none;
@@ -859,6 +871,15 @@ button {
   /* Decorative only — never swallow a click meant for a nearby port
      underneath it (matters when two free ports are close together on
      screen, e.g. an almost-closed loop). */
+  pointer-events: none;
+}
+
+.port-reachable-ring {
+  fill: none;
+  stroke: var(--success);
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
   pointer-events: none;
 }
 
@@ -878,23 +899,8 @@ button {
   }
 }
 
-.join-button {
-  position: fixed;
-  z-index: 11;
-  transform: translate(-50%, -50%);
-  border: none;
-  background: var(--accent);
-  color: #ffffff;
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 13px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-  box-shadow: 0 10px 24px var(--shadow);
-  white-space: nowrap;
-}
-
-.join-button:hover {
-  background: var(--accent-strong);
+.toolbar-join-active {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border-color: var(--accent) !important;
 }

@@ -75,6 +75,21 @@
       "_comment": "A short connector with a peg at both ends (one slightly oversized), used to join two pieces that are both socket-ended and facing each other — something no ordinary piece can do, since every ordinary piece has exactly one peg and one socket. Not a standard commercial BRIO piece; a printable accessory from the same generator. It's just the connector housing, not a full-width track segment, so it gets its own (much narrower) width rather than trackProfile.widthMm.",
       "lengthMm": { "value": 36.2, "source": "pre-generated_parts_stl/brio/train_tracks_brio_dogbone65.stl, measured off the mesh's own bounding box. (The '65' in the filename is the generator's internal radius parameter passed to the module, not the piece's printed length.)" },
       "widthMm": { "value": 13, "source": "same file, measured off the mesh's own bounding box" }
+    },
+    "pegCoupler": {
+      "_comment": "The same peg-at-both-ends role as the dogbone, but shorter and full track width instead of a narrow connector housing — a smaller nudge when bridging two sockets doesn't need the dogbone's extra length.",
+      "lengthMm": { "value": 25, "source": "pre-generated_parts_stl/brio/train_tracks_brio_straight25mm_PP.stl ('PP' = plug-plug, i.e. peg at both ends) — same 25mm nominal length as pieces.shortStraight, confirmed by the mesh bounding box: X span 61.5mm = 25 + 2x18.25mm peg-neck overshoot on both ends (shortStraight's own NP file only overshoots on its one plug end)." }
+    },
+    "crossing4Spur": {
+      "_comment": "Like crossing4, but the cross-axis is a short peg-peg stub instead of a full socket-peg arm — a compact spur off a through line rather than a full second track crossing it. The through-axis is identical to crossing4's (reuses pieces.crossing4.armLengthMm), so this piece drops cleanly into anywhere crossing4 or a plain straight already fits.",
+      "crossArmLengthMm": { "value": 40, "source": "pre-generated_parts_stl/brio/train_tracks_brio_intersect_90deg_100mmNP_40mmPP_b.stl — through axis 100mm NP (same as crossing4), cross axis 40mm PP. Confirmed by the mesh bounding box: cross-axis span 76.5mm = 40 + 2x18.25mm peg-neck overshoot on both ends (crossing4's own 100mm NP cross-axis only overshoots on its one plug end)." }
+    },
+    "snake": {
+      "_comment": "An S-shaped 'sidestep' piece: two equal-and-opposite arcs bring the track back to running parallel to its original direction, but offset sideways. Net heading change is exactly zero (unlike the curve pieces) — it's a lateral jog, not a turn.",
+      "arcAngleDeg": { "value": 35.775, "source": "scad snake_track() example at (then-current) lines 300-307: angle=35.775, radius=86, target_length=146, end1='nest', end2='plug' — this exact combination is what pre-generated_parts_stl/brio/train_tracks_brio_snake_35_775deg_r86mm_l146mm_NP_b.stl was rendered from (filename encodes the same three numbers)." },
+      "arcRadiusMm": { "value": 86, "source": "same example, same file — same radius family as curve45/curve90" },
+      "targetLengthMm": { "value": 146, "source": "same example, same file" },
+      "derivation_note": "The piece's local port geometry (entry at local origin, exit at (targetLengthMm, sidestepMm)) is computed in pieceDefs.ts directly from these three inputs, following snake_track()'s own formula (scad lines 671-687: h1=sin(angle)*radius, h2=sin(angle)*(radius+trackWidth), hf=tan(angle)*(radius+trackWidth), l1=(radius+trackWidth)-radius*cos(angle), l2=(radius+trackWidth)*(1-cos(angle)), sidestep=l1+l2-trackWidth). Cross-checked against the actual mesh's bounding box (see scratch analysis during development): computed side_ext (11.032mm) matched the mesh's min-Y exactly, computed sidestep (~40.0004mm, deliberately close to one trackWidth) matched the mesh's connector-to-connector X offset exactly."
     }
   },
 

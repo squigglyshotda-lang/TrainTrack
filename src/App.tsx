@@ -15,6 +15,8 @@ import { exportBomAsZip } from "./model/exportStl";
 import { exportLayoutAsPdf } from "./model/exportPdf";
 import { buildShareUrl, readLayoutFromLocationHash } from "./model/shareLink";
 import { findJoinPath, placeJoinPath } from "./model/autoJoin";
+import { fitDrawnPath } from "./model/drawFit";
+import type { Point } from "./model/geometry";
 import "./app.css";
 
 interface SelectedPort {
@@ -67,17 +69,28 @@ export default function App() {
   }));
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedPorts, setSelectedPorts] = useState<SelectedPort[]>([]);
   const [pending, setPending] = useState<PendingPick | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [inventory, setInventory] = useState<Record<string, number>>({});
   const [shareStatus, setShareStatus] = useState<"idle" | "copied">("idle");
+  // Smart Join: joinMode is the toolbar toggle; joinSource is the free port
+  // picked as the start once it's on; reachableKeys is recomputed fresh
+  // every time a source is picked, so it's always accurate to the graph as
+  // it stands right now.
+  const [joinMode, setJoinMode] = useState(false);
+  const [joinSource, setJoinSource] = useState<SelectedPort | null>(null);
+  const [reachableKeys, setReachableKeys] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const closures = graph.detectClosures();
   const canUndo = history.index > 0;
   const canRedo = history.index < history.entries.length - 1;
-  const selectedPortKeys = new Set(selectedPorts.map((p) => `${p.pieceId}:${p.portId}`));
+  const joinSourceKey = joinSource ? `${joinSource.pieceId}:${joinSource.portId}` : null;
+
+  const clearJoinSelection = () => {
+    setJoinSource(null);
+    setReachableKeys(new Set());
+  };
 
   // Every mutation (place, attach, delete) funnels through here: snapshot
   // the graph's action list, drop any redo tail, and push it as the new
@@ -94,7 +107,7 @@ export default function App() {
 
   const handleEmptyCanvasClick = (screenPos: { x: number; y: number }) => {
     setSelectedId(null);
-    setSelectedPorts([]);
+    clearJoinSelection();
     if (graph.isEmpty()) {
       setPending({ screenPos, target: null });
     } else {
@@ -102,32 +115,93 @@ export default function App() {
     }
   };
 
+  // Picks `info` as the Smart Join source and searches every other free
+  // port for whether a piece combination can actually reach it (see
+  // autoJoin.ts) — the ports that come back positive are the only ones
+  // Canvas will light up, so there's nothing left to click that could fail.
+  const selectJoinSource = (info: FreePortInfo) => {
+    const sourceKey = `${info.pieceId}:${info.port.id}`;
+    const free = graph.freePorts();
+    const start = { pos: info.worldPos, headingDeg: info.worldHeadingDeg, gender: info.port.gender };
+    const reachable = new Set<string>();
+    for (const fp of free) {
+      const key = `${fp.pieceId}:${fp.port.id}`;
+      if (key === sourceKey) continue;
+      const target = { pos: fp.worldPos, headingDeg: fp.worldHeadingDeg, gender: fp.port.gender };
+      if (findJoinPath(start, target)) reachable.add(key);
+    }
+    setJoinSource({ pieceId: info.pieceId, portId: info.port.id });
+    setReachableKeys(reachable);
+    setBannerError(
+      reachable.size === 0
+        ? "No other free port can be reached from here with the current piece set. Try a different starting port."
+        : null
+    );
+  };
+
+  // Completes a join onto a port already confirmed reachable from the
+  // current source — re-runs the same search (the graph can't have changed
+  // in between) to get the exact piece sequence, then places it for real.
+  const completeJoin = (source: SelectedPort, targetInfo: FreePortInfo) => {
+    const free = graph.freePorts();
+    const a = free.find((fp) => fp.pieceId === source.pieceId && fp.port.id === source.portId);
+    if (!a) {
+      setBannerError("The starting port isn't free anymore — pick a new one.");
+      clearJoinSelection();
+      return;
+    }
+    const result = findJoinPath(
+      { pos: a.worldPos, headingDeg: a.worldHeadingDeg, gender: a.port.gender },
+      { pos: targetInfo.worldPos, headingDeg: targetInfo.worldHeadingDeg, gender: targetInfo.port.gender }
+    );
+    if (!result) {
+      setBannerError("That connection stopped working — something else in the layout changed. Pick a source again.");
+      clearJoinSelection();
+      return;
+    }
+    if (result.pieceTypes.length === 0) {
+      setBannerError(`Those two ports already line up (gap ${result.gapMm.toFixed(1)}mm) — nothing to add.`);
+    } else {
+      placeJoinPath(graph, a.pieceId, a.port.id, result.pieceTypes);
+      commit();
+      setBannerError(null);
+    }
+    clearJoinSelection();
+  };
+
   const handlePortClick = (info: FreePortInfo, screenPos: { x: number; y: number }) => {
-    setSelectedPorts([]);
+    if (joinMode) {
+      const key = `${info.pieceId}:${info.port.id}`;
+      if (!joinSource) {
+        selectJoinSource(info);
+      } else if (key === joinSourceKey) {
+        clearJoinSelection();
+      } else if (reachableKeys.has(key)) {
+        completeJoin(joinSource, info);
+      } else {
+        // Not reachable from the current source — treat it as picking a
+        // new source instead of a dead click.
+        selectJoinSource(info);
+      }
+      return;
+    }
     setPending({
       screenPos,
       target: { pieceId: info.pieceId, portId: info.port.id, gender: info.port.gender },
     });
   };
 
-  // Shift-click on a free port builds up to two selected ports for the
-  // Join feature, instead of opening the attach picker. Clicking a third
-  // port starts a fresh pair rather than growing past two.
-  const handlePortShiftClick = (info: FreePortInfo) => {
+  const handleToggleJoinMode = () => {
+    setJoinMode((prev) => !prev);
+    clearJoinSelection();
     setSelectedId(null);
     setPending(null);
-    const key: SelectedPort = { pieceId: info.pieceId, portId: info.port.id };
-    setSelectedPorts((prev) => {
-      const already = prev.findIndex((p) => p.pieceId === key.pieceId && p.portId === key.portId);
-      if (already !== -1) return prev.filter((_, i) => i !== already);
-      if (prev.length >= 2) return [key];
-      return [...prev, key];
-    });
   };
 
   const handlePieceClick = (pieceId: string) => {
     setSelectedId(pieceId);
-    setSelectedPorts([]);
+    setJoinMode(false);
+    clearJoinSelection();
     setPending(null);
   };
 
@@ -153,7 +227,7 @@ export default function App() {
     const newGraph = LayoutGraph.fromSerialized(template.layout);
     graphRef.current = newGraph;
     setSelectedId(null);
-    setSelectedPorts([]);
+    clearJoinSelection();
     setPending(null);
     setHistory({ entries: [newGraph.serialize()], index: 0 });
   };
@@ -161,7 +235,7 @@ export default function App() {
   const handleDeleteLast = () => {
     graph.deleteLast();
     setSelectedId(null);
-    setSelectedPorts([]);
+    clearJoinSelection();
     commit();
   };
 
@@ -198,48 +272,38 @@ export default function App() {
     }
   };
 
-  // Searches for a sequence of pieces connecting the two selected ports
-  // and places it if one's found. This is a real search (see autoJoin.ts),
-  // not guaranteed to succeed — most arbitrary port pairs don't have an
-  // exact match within the same tolerance the rest of the app uses for
-  // loop closures, so failure is reported plainly rather than forced.
-  const handleJoinSelectedPorts = () => {
-    if (selectedPorts.length !== 2) return;
-    const free = graph.freePorts();
-    const [a, b] = selectedPorts.map(
-      (sel) => free.find((fp) => fp.pieceId === sel.pieceId && fp.port.id === sel.portId)!
-    );
-    if (!a || !b) {
-      setBannerError("One of the selected ports isn't free anymore.");
-      setSelectedPorts([]);
-      return;
-    }
-
+  // Fits pieces to a freehand-drawn path (see drawFit.ts) starting from the
+  // free port the drag began on. This is a curve-fit, not an exact search
+  // like join — it won't always use every bit of the drawn line, and says
+  // so plainly rather than forcing pieces past where the fit stopped
+  // working.
+  const handleDrawPathComplete = (info: FreePortInfo, worldPoints: Point[]) => {
+    setSelectedId(null);
+    clearJoinSelection();
+    setPending(null);
     setBannerError(null);
-    const result = findJoinPath(
-      { pos: a.worldPos, headingDeg: a.worldHeadingDeg, gender: a.port.gender },
-      { pos: b.worldPos, headingDeg: b.worldHeadingDeg, gender: b.port.gender }
-    );
 
-    if (!result) {
-      const bothPeg = a.port.gender === "peg" && b.port.gender === "peg";
-      setBannerError(
-        bothPeg
-          ? "Can't join two peg ends — nothing in this piece library bridges two pegs (real BRIO connectors can't do this either)."
-          : "Couldn't find a piece combination that connects those two ports within the usual closure tolerance. Try two ports that are more directly aligned."
-      );
-      return;
-    }
+    const result = fitDrawnPath(
+      { pos: info.worldPos, headingDeg: info.worldHeadingDeg, gender: info.port.gender },
+      worldPoints
+    );
 
     if (result.pieceTypes.length === 0) {
-      setBannerError(`Those two ports already line up (gap ${result.gapMm.toFixed(1)}mm) — nothing to add.`);
-      setSelectedPorts([]);
+      setBannerError("Couldn't fit any track pieces to that drawing — try a longer or gentler stroke.");
       return;
     }
 
-    placeJoinPath(graph, a.pieceId, a.port.id, result.pieceTypes);
-    setSelectedPorts([]);
+    placeJoinPath(graph, info.pieceId, info.port.id, result.pieceTypes);
     commit();
+
+    if (result.stoppedEarly) {
+      setBannerError(
+        `Placed ${result.pieceTypes.length} piece${result.pieceTypes.length === 1 ? "" : "s"} following your ` +
+          `drawing, but the shape did something the pieces couldn't quite follow after that ` +
+          `(used ${Math.round(result.pathUsedMm)}mm of the ${Math.round(result.totalPathMm)}mm you drew). ` +
+          `Draw again from the new end to keep going.`
+      );
+    }
   };
 
   // Delete / Backspace remove the selected piece, unless the user is
@@ -264,7 +328,7 @@ export default function App() {
     const newIndex = history.index - 1;
     graphRef.current = LayoutGraph.fromSerialized(history.entries[newIndex]);
     setSelectedId(null);
-    setSelectedPorts([]);
+    clearJoinSelection();
     setHistory((prev) => ({ ...prev, index: newIndex }));
   };
 
@@ -273,7 +337,7 @@ export default function App() {
     const newIndex = history.index + 1;
     graphRef.current = LayoutGraph.fromSerialized(history.entries[newIndex]);
     setSelectedId(null);
-    setSelectedPorts([]);
+    clearJoinSelection();
     setHistory((prev) => ({ ...prev, index: newIndex }));
   };
 
@@ -339,7 +403,7 @@ export default function App() {
       const newGraph = LayoutGraph.fromSerialized(data.layout);
       graphRef.current = newGraph;
       setSelectedId(null);
-      setSelectedPorts([]);
+      clearJoinSelection();
       setInventory(data.inventory ?? {});
       // Loading starts a fresh undo history at the loaded state, rather
       // than treating the load itself as one undoable step.
@@ -369,6 +433,9 @@ export default function App() {
         onLoadClick={handleLoadClick}
         onCopyShareLink={handleCopyShareLink}
         shareStatus={shareStatus}
+        canJoin={graph.freePorts().length >= 2}
+        joinMode={joinMode}
+        onToggleJoinMode={handleToggleJoinMode}
       />
       <input
         ref={fileInputRef}
@@ -393,12 +460,13 @@ export default function App() {
         <Canvas
           graph={graph}
           onPortClick={handlePortClick}
-          onPortShiftClick={handlePortShiftClick}
+          onDrawPathComplete={handleDrawPathComplete}
           onPieceClick={handlePieceClick}
           onEmptyCanvasClick={handleEmptyCanvasClick}
           selectedId={selectedId}
-          selectedPortKeys={selectedPortKeys}
-          onJoinSelectedPorts={handleJoinSelectedPorts}
+          joinMode={joinMode}
+          joinSourceKey={joinSourceKey}
+          reachableKeys={reachableKeys}
           closures={closures}
           onFlipSelected={handleFlipSelected}
           onReplaceSelected={handleReplaceSelected}

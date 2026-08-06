@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { VISIBLE_PIECE_DEFS, PIECE_DEFS_BY_TYPE } from "../data/pieceDefs";
+import { VISIBLE_PIECE_DEFS, ATTACHABLE_PIECE_DEFS, PIECE_DEFS_BY_TYPE } from "../data/pieceDefs";
 import PieceThumbnail from "./PieceThumbnail";
 import type { Gender, Port } from "../model/types";
 
@@ -20,7 +20,11 @@ function compatiblePorts(ports: Port[], requiredGender?: Gender): Port[] {
 export default function PiecePicker({ screenPos, requiredGender, onChoose, onCancel }: PiecePickerProps) {
   const [pendingType, setPendingType] = useState<string | null>(null);
 
-  const options = VISIBLE_PIECE_DEFS.filter((def) => compatiblePorts(def.ports, requiredGender).length > 0);
+  // Placing the very first piece (no target to match) only offers the
+  // normal browsable set; attaching onto an existing port also offers the
+  // dogbone when it's the only compatible piece (see ATTACHABLE_PIECE_DEFS).
+  const pool = requiredGender ? ATTACHABLE_PIECE_DEFS : VISIBLE_PIECE_DEFS;
+  const options = pool.filter((def) => compatiblePorts(def.ports, requiredGender).length > 0);
 
   const left = Math.min(screenPos.x, window.innerWidth - 300);
   const top = Math.min(screenPos.y, window.innerHeight - 340);

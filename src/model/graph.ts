@@ -45,14 +45,19 @@ export interface ClosurePair {
 // The graph's entire composition, boiled down to the sequence of placement
 // decisions that built it — a root piece, then a chain of "attach childType
 // via childPortId to parentPieceId's parentPortId" steps. Positions and
-// rotations are never part of this: they're always re-derived on load by
+// rotations are (almost) never part of this: they're re-derived on load by
 // replaying these steps through the same placement math used interactively.
+// The one exception is rootTransform: a normal root is always placed at the
+// origin, but deleting a root piece detaches its children into new roots of
+// their own (see deletePiece) rather than discarding them, and those need
+// to reload exactly where they already were, not snap back to the origin.
 // This is what save/load, undo/redo, and delete-driven history all share.
 export interface SerializedAction {
   id: string;
   type: string;
   parent?: { pieceId: string; portId: string };
   childPortId?: string;
+  rootTransform?: Transform;
 }
 
 export interface SerializedLayout {
@@ -87,10 +92,10 @@ export class LayoutGraph {
     return this.pieces.size === 0;
   }
 
-  placeRoot(type: string, explicitId?: string): PlacedPiece {
+  placeRoot(type: string, explicitId?: string, explicitTransform?: Transform): PlacedPiece {
     const id = explicitId ?? this.nextId();
     this.noteExistingId(id);
-    const piece: PlacedPiece = { id, type, transform: { x: 0, y: 0, rotationDeg: 0 } };
+    const piece: PlacedPiece = { id, type, transform: explicitTransform ?? { x: 0, y: 0, rotationDeg: 0 } };
     this.pieces.set(id, piece);
     this.order.push(id);
     return piece;
@@ -216,9 +221,25 @@ export class LayoutGraph {
     }
   }
 
-  // Deletes a piece and, since removing it would otherwise orphan anything
-  // built on top of it, everything attached beyond it too.
+  // Detaches a root piece's direct children into independent roots of
+  // their own, at exactly the world position/heading they already had —
+  // nothing about them is recomputed or moved. Used by deletePiece so that
+  // removing a root doesn't take the rest of the layout with it.
+  private detachChildrenAsRoots(id: string): void {
+    for (const childId of this.childrenOf.get(id) ?? []) {
+      this.attachmentsByChild.delete(childId);
+    }
+    this.childrenOf.set(id, []);
+  }
+
+  // Deletes a piece. If it's a root (nothing attached above it), whatever
+  // was built on top of it survives as newly-independent roots instead of
+  // being deleted too — see detachChildrenAsRoots. A non-root piece still
+  // takes everything downstream of it with it: those pieces' positions
+  // were solved relative to it specifically and have no other parent to
+  // hang from.
   deletePiece(id: string): void {
+    if (!this.attachmentsByChild.has(id)) this.detachChildrenAsRoots(id);
     this.removeSubtree(id);
   }
 
@@ -301,7 +322,7 @@ export class LayoutGraph {
     const actions: SerializedAction[] = this.order.map((id) => {
       const piece = this.pieces.get(id)!;
       const att = this.attachmentsByChild.get(id);
-      if (!att) return { id, type: piece.type };
+      if (!att) return { id, type: piece.type, rootTransform: piece.transform };
       return {
         id,
         type: piece.type,
@@ -316,7 +337,7 @@ export class LayoutGraph {
     const graph = new LayoutGraph();
     for (const action of data.actions) {
       if (!action.parent) {
-        graph.placeRoot(action.type, action.id);
+        graph.placeRoot(action.type, action.id, action.rootTransform);
       } else {
         graph.attach(action.parent.pieceId, action.parent.portId, action.type, action.childPortId!, action.id);
       }

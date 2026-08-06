@@ -16,7 +16,7 @@ import type { LayoutGraph } from "./graph";
 // (which only ever gets chosen when it's the sole way to bridge two
 // sockets — see the gender note below). Multi-port pieces don't make
 // sense for a single point-to-point connector.
-const ROUTE_PIECE_TYPES = [
+export const ROUTE_PIECE_TYPES = [
   "straight",
   "halfStraight",
   "shortStraight",
@@ -24,7 +24,10 @@ const ROUTE_PIECE_TYPES = [
   "curve45Mirror",
   "curve90",
   "curve90Mirror",
+  "snake",
+  "snakeMirror",
   "dogbone",
+  "pegCoupler",
 ];
 
 export interface RoutePort {
@@ -67,7 +70,7 @@ function stateKey(state: RoutePort): string {
 // other port as the new frontier. Returns null if the piece has no
 // compatible port at all (only happens for the dogbone against a peg
 // frontier — it has no socket to offer).
-function applyMove(state: RoutePort, pieceType: string): RoutePort | null {
+export function applyMove(state: RoutePort, pieceType: string): RoutePort | null {
   const def = PIECE_DEFS_BY_TYPE[pieceType];
   const attachPort = def.ports.find((p) => p.gender !== state.gender);
   if (!attachPort) return null;

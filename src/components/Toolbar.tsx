@@ -16,6 +16,9 @@ interface ToolbarProps {
   onLoadClick: () => void;
   onCopyShareLink: () => void;
   shareStatus: "idle" | "copied";
+  canJoin: boolean;
+  joinMode: boolean;
+  onToggleJoinMode: () => void;
 }
 
 export default function Toolbar({
@@ -36,6 +39,9 @@ export default function Toolbar({
   onLoadClick,
   onCopyShareLink,
   shareStatus,
+  canJoin,
+  joinMode,
+  onToggleJoinMode,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
@@ -56,6 +62,15 @@ export default function Toolbar({
         </button>
         <button disabled={!canDeleteLast} onClick={onDeleteLast}>
           Delete Last Piece
+        </button>
+        <span className="toolbar-divider" aria-hidden="true" />
+        <button
+          disabled={!canJoin && !joinMode}
+          onClick={onToggleJoinMode}
+          className={joinMode ? "toolbar-join-active" : undefined}
+          title="Pick a free port, and only the ports it can actually reach will light up"
+        >
+          {joinMode ? "⚡ Smart Join (on)" : "⚡ Smart Join"}
         </button>
         <span className="toolbar-divider" aria-hidden="true" />
         <button onClick={onLoadClick}>Load Layout…</button>

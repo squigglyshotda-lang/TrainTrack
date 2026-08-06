@@ -4,6 +4,7 @@ import { PIECE_DEFS_BY_TYPE, MIRROR_PARTNER } from "../data/pieceDefs";
 import { polygonToPath } from "../model/svgPath";
 import SelectionMenu from "./SelectionMenu";
 import type { LayoutGraph, FreePortInfo, ClosurePair } from "../model/graph";
+import type { Point } from "../model/geometry";
 
 interface View {
   scale: number; // px per mm
@@ -14,16 +15,21 @@ interface View {
 interface CanvasProps {
   graph: LayoutGraph;
   onPortClick: (info: FreePortInfo, screenPos: { x: number; y: number }) => void;
-  onPortShiftClick: (info: FreePortInfo) => void;
+  onDrawPathComplete: (info: FreePortInfo, worldPoints: Point[]) => void;
   onPieceClick: (pieceId: string) => void;
   onEmptyCanvasClick: (screenPos: { x: number; y: number }) => void;
   selectedId: string | null;
-  selectedPortKeys: Set<string>;
-  onJoinSelectedPorts: () => void;
   closures: ClosurePair[];
   onFlipSelected: (pieceId: string) => void;
   onReplaceSelected: (pieceId: string, screenPos: { x: number; y: number }) => void;
   onDeleteSelected: () => void;
+  // Smart Join: while active, a port click doesn't open the attach picker —
+  // it either picks a join source (App.tsx then computes which other free
+  // ports are actually reachable from it) or, if a source is already
+  // picked, completes the join onto whichever reachable port was clicked.
+  joinMode: boolean;
+  joinSourceKey: string | null;
+  reachableKeys: Set<string>;
 }
 
 const PEG_COLOR = "var(--peg)";
@@ -32,26 +38,45 @@ const SOCKET_COLOR = "var(--socket)";
 export default function Canvas({
   graph,
   onPortClick,
-  onPortShiftClick,
+  onDrawPathComplete,
   onPieceClick,
   onEmptyCanvasClick,
   selectedId,
-  selectedPortKeys,
-  onJoinSelectedPorts,
   closures,
   onFlipSelected,
   onReplaceSelected,
   onDeleteSelected,
+  joinMode,
+  joinSourceKey,
+  reachableKeys,
 }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>({ scale: 1.6, tx: 400, ty: 300 });
   const dragState = useRef<{ startX: number; startY: number; origTx: number; origTy: number; moved: boolean } | null>(
     null
   );
+  // A drag that starts on a free port draws a rough path instead of panning
+  // (ports already stop the background pan from starting at all). Below a
+  // small movement threshold it's still treated as an ordinary click, so
+  // the existing attach-picker / shift-select behavior is untouched.
+  const drawState = useRef<{
+    fp: FreePortInfo;
+    startClientX: number;
+    startClientY: number;
+    points: Point[];
+    moved: boolean;
+  } | null>(null);
+  const [drawPreview, setDrawPreview] = useState<Point[] | null>(null);
+  const DRAW_THRESHOLD_PX = 10;
 
   const toLocal = (clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect();
     return { x: clientX - (rect?.left ?? 0), y: clientY - (rect?.top ?? 0) };
+  };
+
+  const toWorld = (clientX: number, clientY: number) => {
+    const local = toLocal(clientX, clientY);
+    return { x: (local.x - view.tx) / view.scale, y: (local.y - view.ty) / view.scale };
   };
 
   // World mm coordinates -> viewport screen pixels, inverse of toLocal plus
@@ -160,6 +185,13 @@ export default function Canvas({
             );
           })}
 
+          {drawPreview && drawPreview.length > 1 && (
+            <polyline
+              points={drawPreview.map((p) => `${p.x},${p.y}`).join(" ")}
+              className="draw-path-preview"
+            />
+          )}
+
           {closures.map((pair, i) => (
             <line
               key={i}
@@ -172,23 +204,61 @@ export default function Canvas({
           ))}
 
           {freePorts.map((fp) => {
-            const isPortSelected = selectedPortKeys.has(`${fp.pieceId}:${fp.port.id}`);
+            const key = `${fp.pieceId}:${fp.port.id}`;
+            const isJoinSource = key === joinSourceKey;
+            const isReachable = reachableKeys.has(key);
+            // Once a join source is picked, ports that Smart Join can't
+            // actually connect to fade out instead of just sitting there
+            // waiting to produce an error if clicked.
+            const isDimmed = joinMode && !!joinSourceKey && !isJoinSource && !isReachable;
             return (
               <g
-                key={`${fp.pieceId}:${fp.port.id}`}
+                key={key}
                 transform={`translate(${fp.worldPos.x} ${fp.worldPos.y})`}
-                onPointerDown={(e) => e.stopPropagation()}
-                onPointerUp={(e) => {
+                onPointerDown={(e) => {
                   e.stopPropagation();
-                  if (e.shiftKey) {
-                    onPortShiftClick(fp);
-                  } else {
-                    onPortClick(fp, toScreen(fp.worldPos.x, fp.worldPos.y));
+                  if (joinMode) return;
+                  (e.currentTarget as Element).setPointerCapture(e.pointerId);
+                  drawState.current = {
+                    fp,
+                    startClientX: e.clientX,
+                    startClientY: e.clientY,
+                    points: [fp.worldPos],
+                    moved: false,
+                  };
+                }}
+                onPointerMove={(e) => {
+                  const d = drawState.current;
+                  if (!d) return;
+                  if (e.buttons === 0) {
+                    drawState.current = null;
+                    setDrawPreview(null);
+                    return;
+                  }
+                  const dx = e.clientX - d.startClientX;
+                  const dy = e.clientY - d.startClientY;
+                  if (!d.moved && Math.hypot(dx, dy) > DRAW_THRESHOLD_PX) d.moved = true;
+                  if (d.moved) {
+                    d.points.push(toWorld(e.clientX, e.clientY));
+                    setDrawPreview([...d.points]);
                   }
                 }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                  const d = drawState.current;
+                  drawState.current = null;
+                  setDrawPreview(null);
+                  if (d && d.moved) {
+                    onDrawPathComplete(d.fp, d.points);
+                    return;
+                  }
+                  onPortClick(fp, toScreen(fp.worldPos.x, fp.worldPos.y));
+                }}
                 className="port-free"
+                style={isDimmed ? { opacity: 0.28 } : undefined}
               >
-                {isPortSelected && <circle r={9} className="port-join-ring" />}
+                {isJoinSource && <circle r={9} className="port-join-ring" />}
+                {isReachable && !isJoinSource && <circle r={8} className="port-reachable-ring" />}
                 {fp.port.gender === "peg" ? (
                   <circle r={4} fill={PEG_COLOR} />
                 ) : (
@@ -222,26 +292,6 @@ export default function Canvas({
               onReplace={() => onReplaceSelected(selectedId, anchor)}
               onDelete={onDeleteSelected}
             />
-          );
-        })()}
-
-      {selectedPortKeys.size === 2 &&
-        (() => {
-          const selected = freePorts.filter((fp) => selectedPortKeys.has(`${fp.pieceId}:${fp.port.id}`));
-          if (selected.length !== 2) return null;
-          const midWorld = {
-            x: (selected[0].worldPos.x + selected[1].worldPos.x) / 2,
-            y: (selected[0].worldPos.y + selected[1].worldPos.y) / 2,
-          };
-          const anchor = toScreen(midWorld.x, midWorld.y);
-          return (
-            <button
-              className="join-button"
-              style={{ left: anchor.x, top: anchor.y }}
-              onClick={onJoinSelectedPorts}
-            >
-              ⚡ Join
-            </button>
           );
         })()}
     </div>
