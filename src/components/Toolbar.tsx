@@ -13,7 +13,10 @@ export default function Toolbar({
 }: ToolbarProps) {
   return (
     <div className="toolbar">
-      <span className="toolbar-title">TrainTrack Planner</span>
+      <div className="toolbar-heading">
+        <span className="toolbar-title">TrainTrack Planner</span>
+        <span className="toolbar-phase">Phase 1 · Planner, no export yet</span>
+      </div>
       <div className="toolbar-actions">
         <button disabled={!canDeleteSelected} onClick={onDeleteSelected}>
           Delete Selected

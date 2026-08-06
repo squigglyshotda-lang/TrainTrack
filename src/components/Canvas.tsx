@@ -24,8 +24,8 @@ function polygonToPath(points: { x: number; y: number }[]): string {
   return `M ${first.x},${first.y} ` + rest.map((p) => `L ${p.x},${p.y}`).join(" ") + " Z";
 }
 
-const PEG_COLOR = "#2563eb";
-const SOCKET_COLOR = "#d97706";
+const PEG_COLOR = "var(--peg)";
+const SOCKET_COLOR = "var(--socket)";
 
 export default function Canvas({
   graph,
@@ -161,7 +161,7 @@ export default function Canvas({
               ) : (
                 <>
                   <circle r={5} fill={SOCKET_COLOR} />
-                  <circle r={2.4} fill="var(--canvas-bg)" />
+                  <circle r={2.4} fill="var(--bg)" />
                 </>
               )}
             </g>
