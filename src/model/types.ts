@@ -6,6 +6,14 @@ export interface Port {
   y: number;
   headingDeg: number;
   gender: Gender;
+  // Which discrete height tier this port sits at, LOCAL to the piece (0 if
+  // omitted). Every piece except the bridge ramps has both ports at the
+  // same level — a real bridge's height mostly comes from tilting an
+  // ordinary straight piece used as the deck, which this app can't track
+  // (it has no notion of grade/slope, only flat pieces), so this counts
+  // discrete "one ramp up/down" steps rather than claiming a physical mm
+  // height this app doesn't actually know.
+  level?: number;
 }
 
 export interface PieceDef {

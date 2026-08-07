@@ -20,6 +20,10 @@ export interface PlacedPiece {
   id: string;
   type: string;
   transform: Transform;
+  // Discrete height tier of this piece's own local origin — 0 for ground,
+  // +1/-1 etc. for one bridge-ramp step up/down. See Port.level's comment
+  // for why this is a step count, not a physical height.
+  level: number;
 }
 
 export interface Attachment {
@@ -34,6 +38,7 @@ export interface FreePortInfo {
   port: Port;
   worldPos: Point;
   worldHeadingDeg: number;
+  worldLevel: number;
 }
 
 export interface ClosurePair {
@@ -58,6 +63,7 @@ export interface SerializedAction {
   parent?: { pieceId: string; portId: string };
   childPortId?: string;
   rootTransform?: Transform;
+  rootLevel?: number;
 }
 
 export interface SerializedLayout {
@@ -92,10 +98,15 @@ export class LayoutGraph {
     return this.pieces.size === 0;
   }
 
-  placeRoot(type: string, explicitId?: string, explicitTransform?: Transform): PlacedPiece {
+  placeRoot(type: string, explicitId?: string, explicitTransform?: Transform, explicitLevel?: number): PlacedPiece {
     const id = explicitId ?? this.nextId();
     this.noteExistingId(id);
-    const piece: PlacedPiece = { id, type, transform: explicitTransform ?? { x: 0, y: 0, rotationDeg: 0 } };
+    const piece: PlacedPiece = {
+      id,
+      type,
+      transform: explicitTransform ?? { x: 0, y: 0, rotationDeg: 0 },
+      level: explicitLevel ?? 0,
+    };
     this.pieces.set(id, piece);
     this.order.push(id);
     return piece;
@@ -134,10 +145,12 @@ export class LayoutGraph {
       childPort,
       childPort.headingDeg
     );
+    const parentPortWorldLevel = parent.level + (parentPort.level ?? 0);
+    const level = parentPortWorldLevel - (childPort.level ?? 0);
 
     const id = explicitId ?? this.nextId();
     this.noteExistingId(id);
-    const piece: PlacedPiece = { id, type: childType, transform };
+    const piece: PlacedPiece = { id, type: childType, transform, level };
     this.pieces.set(id, piece);
     this.order.push(id);
 
@@ -181,6 +194,7 @@ export class LayoutGraph {
       const parentWorldPos = applyTransform(parent.transform, parentPort);
       const parentWorldHeadingDeg = worldHeading(parent.transform, parentPort.headingDeg);
       piece.transform = solveChildTransform(parentWorldPos, parentWorldHeadingDeg, childPort, childPort.headingDeg);
+      piece.level = parent.level + (parentPort.level ?? 0) - (childPort.level ?? 0);
     }
 
     this.recomputeDescendantTransforms(id);
@@ -215,6 +229,7 @@ export class LayoutGraph {
       const parentWorldPos = applyTransform(parent.transform, parentPort);
       const parentWorldHeadingDeg = worldHeading(parent.transform, parentPort.headingDeg);
       child.transform = solveChildTransform(parentWorldPos, parentWorldHeadingDeg, childPort, childPort.headingDeg);
+      child.level = parent.level + (parentPort.level ?? 0) - (childPort.level ?? 0);
       this.recomputeDescendantTransforms(childId);
     }
   }
@@ -318,6 +333,7 @@ export class LayoutGraph {
           port,
           worldPos: applyTransform(piece.transform, port),
           worldHeadingDeg: worldHeading(piece.transform, port.headingDeg),
+          worldLevel: piece.level + (port.level ?? 0),
         });
       }
     }
@@ -351,6 +367,10 @@ export class LayoutGraph {
         const b = free[j];
         if (a.pieceId === b.pieceId) continue;
         if (a.port.gender === b.port.gender) continue;
+        // Two ports at different height tiers can't be the same physical
+        // connection even if they happen to line up in X/Y — e.g. a
+        // ground-level dead end sitting under an elevated one.
+        if (a.worldLevel !== b.worldLevel) continue;
         const gap = distance(a.worldPos, b.worldPos);
         if (gap > posTol) continue;
         const oppositeOfB = normalizeDeg(b.worldHeadingDeg + 180);
@@ -365,7 +385,7 @@ export class LayoutGraph {
     const actions: SerializedAction[] = this.order.map((id) => {
       const piece = this.pieces.get(id)!;
       const att = this.attachmentsByChild.get(id);
-      if (!att) return { id, type: piece.type, rootTransform: piece.transform };
+      if (!att) return { id, type: piece.type, rootTransform: piece.transform, rootLevel: piece.level };
       return {
         id,
         type: piece.type,
@@ -380,7 +400,7 @@ export class LayoutGraph {
     const graph = new LayoutGraph();
     for (const action of data.actions) {
       if (!action.parent) {
-        graph.placeRoot(action.type, action.id, action.rootTransform);
+        graph.placeRoot(action.type, action.id, action.rootTransform, action.rootLevel);
       } else {
         graph.attach(action.parent.pieceId, action.parent.portId, action.type, action.childPortId!, action.id);
       }

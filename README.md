@@ -7,12 +7,13 @@ pieces as 3D-printable STL files.
 ## Status
 
 Phases 1, 2a, and 3 are complete. Phase 4 is partial: PDF export and
-shareable links are done; true elevation (a 3D-aware port model, height in
-the closure math, a side or isometric view) is not — see below for why.
-Bridge ramp pieces exist and are placeable, but as a deliberate
-simplification, not full elevation support. Phase 2b (live
-OpenSCAD-in-the-browser generation) hasn't been attempted; Phase 2a
-already covers every piece type in the app.
+shareable links are done; *continuous* elevation (real mm height, a
+side/isometric view) is not — see below for why. Bridge ramp pieces exist
+and are placeable, ports carry a discrete height level, closure detection
+respects it, and elevated pieces are visually distinct on the canvas —
+deliberately a step count rather than true physical height (see "Levels").
+Phase 2b (live OpenSCAD-in-the-browser generation) hasn't been attempted;
+Phase 2a already covers every piece type in the app.
 
 ## How the layout works
 
@@ -154,21 +155,47 @@ actually turning it.
 **Bridge Ramp — Up / Down.** These are real, sourced pieces (torwan's
 `generate_bridge()`, 14° angle, 100mm radius) that physically climb from
 ground level to an elevated height and back down. This app is 2D
-top-down only (see "what's not here yet" below), so they're placed as
-plain straight-line pieces using their real *horizontal* span — the
-canvas doesn't show them rising, and nothing checks whether an elevated
-piece actually clears whatever it's meant to cross. That's the deliberate
-simplification behind adding them now instead of waiting for full
-elevation support: the pieces are real and useful for building and
-exporting a bridge crossing, the canvas just won't picture the "up and
-over" part. To build a full crossing: Ramp Up (ground → peak, socket →
-peg) → an ordinary straight piece as the tilted deck (any length; 100mm
-lands the crossing at roughly 63mm of clearance, per
-`track-spec.json`'s `bridgeHeightMm`) → Ramp Down (peak → ground). Ramp
-Down is unusual among this app's pieces: *both* its ports are sockets
-(matching the real part), not the usual one-socket-one-peg pattern — so
-both connecting it to the deck and continuing past its far end need a
-peg-offering piece, same as anywhere else two sockets meet.
+top-down only (see "what's not here yet" below), so on the canvas
+they're placed as plain straight-line pieces using their real
+*horizontal* span, at the same (x, y) they'd occupy if they were flat —
+nothing here pictures the physical "up and over" arc, or checks whether
+an elevated piece actually clears whatever it's meant to cross. What the
+canvas *does* track and show is which discrete height **level** every
+piece is at (see "Levels" below) — so even though nothing visually rises,
+it's still obvious at a glance which pieces are elevated versus which
+are back at ground. To build a full crossing: Ramp Up (ground → peak,
+socket → peg) → an ordinary straight piece as the tilted deck (any
+length; 100mm lands the crossing at roughly 63mm of real clearance, per
+`track-spec.json`'s `bridgeHeightMm` — though the app itself only tracks
+the *step*, not this mm figure, see below) → Ramp Down (peak → ground).
+Ramp Down is unusual among this app's pieces: *both* its ports are
+sockets (matching the real part), not the usual one-socket-one-peg
+pattern — so both connecting it to the deck and continuing past its far
+end need a peg-offering piece, same as anywhere else two sockets meet.
+
+**Levels.** Every piece sits at a whole-number height tier — 0 is
+wherever your layout started, +1 is one ramp-up away, -1 one ramp-down,
+and so on (a Ramp piece itself straddles two: its low end is one tier,
+its high end the next). Every ordinary piece keeps both its ports at the
+same tier as whatever it's attached to; only the two Ramp pieces change
+it. A piece that isn't at tier 0 gets a dashed, tinted outline, a small
+drop shadow, and a "L1"-style label at its center; a free port off the
+starting tier gets the same small label next to it. This is deliberately
+a step count, not a physical height in mm: real bridge height mostly
+comes from *tilting* the ordinary straight piece used as the deck, and
+this app has no notion of grade or slope for a piece to tilt — a straight
+is always flat, whichever role it's playing. Levels also feed loop
+closure: two free ports at different tiers are never reported as closed
+even if their (x, y) and heading happen to line up, since physically they
+aren't the same connection point. Because there's no collision detection
+anywhere in this app (never has been — see "How the layout works" above),
+nothing stops a piece at one level from occupying the same (x, y) as a
+piece at another — that's exactly the "track running under an elevated
+one" case, and the dashed styling plus the level label is what keeps it
+legible when it happens, rather than looking like an accidental overlap.
+Pieces also draw in level order (lowest first), so where two do overlap,
+the higher one visually sits on top, matching which one would really be
+on top.
 
 The source repo also has a real bridge pillar STL
 (`bridge_pillar_14deg_r100mm_s205mm_p50mm.stl`) that this app deliberately
@@ -209,19 +236,18 @@ UI at all.
 
 ## What's not here yet, and why
 
-**True elevation (a height-aware port model, an "up and over" view).** The
-bridge ramp pieces exist now (see above) and are placeable, but every port
-in this app is still purely 2D (x, y, heading) — the ramps are modeled by
-their real horizontal footprint, not by actually rising on screen. A piece
-whose ports also carry a height and a grade — so the canvas could show a
-bridge crossing over another track, and closure detection could tell an
-elevated dead-end from a ground-level one — touches the port model, the
-closure-detection math, and how (or whether) a top-down 2D view shows
-height at all. That's a real design decision, not a piece-type addition,
-so it's still being left for a focused follow-up rather than a rushed
-bolt-on. **Tunnels:** there's no tunnel module or pre-generated tunnel STL
-anywhere in torwan's generator repo, so none is offered here either —
-adding one would mean inventing dimensions, which breaks the one rule
+**Continuous height / a true "up and over" view.** Ports now carry a
+discrete level (see "Levels" above) — that's enough to make elevation
+visible and to keep closure detection honest, which was the actual gap
+being asked for. What's still not here is *physical* height: a real mm
+grade, a piece that visibly rises on the canvas, or a side/isometric view
+that would let you eyeball real-world clearance instead of reading a
+level number. That needs pieces (or attachments) to carry a grade/slope,
+not just a step count, which is a bigger port-model change than this
+project has taken on. **Tunnels:** there's no tunnel module or
+pre-generated tunnel STL anywhere in torwan's generator repo, so none is
+offered here either — adding one would mean inventing dimensions, which
+breaks the one rule
 every other piece in this app follows.
 
 **Phase 2b (live OpenSCAD-in-the-browser generation).** Not attempted.

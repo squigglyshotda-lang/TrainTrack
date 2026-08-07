@@ -45,6 +45,8 @@
   --socket: #17b897;
   --success: #2fae72;
   --shadow: rgba(80, 55, 20, 0.14);
+  --level-up: #b8842a;
+  --level-down: #2969a3;
 
   /* Pastel family cycled across the piece palette / picker cards */
   --pastel-1-bg: #fff1c2;
@@ -83,6 +85,8 @@
     --socket: #3fd8b3;
     --success: #5cd393;
     --shadow: rgba(0, 0, 0, 0.45);
+    --level-up: #ffcf7a;
+    --level-down: #92cdf5;
 
     --pastel-1-bg: #4a3f1f;
     --pastel-1-ink: #ffd873;
@@ -115,6 +119,8 @@
   --socket: #3fd8b3;
   --success: #5cd393;
   --shadow: rgba(0, 0, 0, 0.45);
+  --level-up: #ffcf7a;
+  --level-down: #92cdf5;
   --pastel-1-bg: #4a3f1f;
   --pastel-1-ink: #ffd873;
   --pastel-2-bg: #3a3160;
@@ -144,6 +150,8 @@
   --socket: #17b897;
   --success: #2fae72;
   --shadow: rgba(80, 55, 20, 0.14);
+  --level-up: #b8842a;
+  --level-down: #2969a3;
   --pastel-1-bg: #fff1c2;
   --pastel-1-ink: #8a5a12;
   --pastel-2-bg: #e4dcff;
@@ -432,6 +440,53 @@ button {
   stroke: var(--accent);
   stroke-width: 2.6;
   fill: var(--accent-soft);
+}
+
+/* Height tiers: a bridge ramp's own type already says what it is, but once
+   several pieces are stacked at different heights (or a piece is simply
+   not at the layout's starting level), a dashed, tinted outline plus a
+   drop shadow makes "this one isn't down here with everything else"
+   readable without having to click each piece to check. */
+.piece-elevated {
+  filter: drop-shadow(0 3px 2.5px var(--shadow));
+}
+
+.piece-elevated .piece-outline {
+  stroke: var(--level-up);
+  stroke-width: 2.2;
+  stroke-dasharray: 5 2.5;
+}
+
+.piece-depressed {
+  filter: drop-shadow(0 -2.5px 2.5px var(--shadow));
+}
+
+.piece-depressed .piece-outline {
+  stroke: var(--level-down);
+  stroke-width: 2.2;
+  stroke-dasharray: 5 2.5;
+}
+
+.piece-elevated .piece-outline-selected,
+.piece-depressed .piece-outline-selected {
+  stroke: var(--accent);
+  stroke-dasharray: none;
+}
+
+.level-badge-text {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--ink);
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.port-level-text {
+  font-size: 6.5px;
 }
 
 .port-free {

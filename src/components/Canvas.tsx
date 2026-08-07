@@ -216,6 +216,18 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const freePorts = graph.freePorts();
   const scaleBarMm = pickScaleBarMm(view.scale);
 
+  // Every piece's own height range (a plain piece touches one level; a
+  // bridge ramp spans two), sorted so higher pieces draw last — i.e. on
+  // top of whatever they'd physically be floating above, matching how an
+  // elevated track actually occludes what's underneath it.
+  const piecesByRenderOrder = [...graph.pieces.values()]
+    .map((piece) => {
+      const def = PIECE_DEFS_BY_TYPE[piece.type];
+      const levels = def.ports.map((p) => piece.level + (p.level ?? 0));
+      return { piece, minLevel: Math.min(...levels), maxLevel: Math.max(...levels) };
+    })
+    .sort((a, b) => a.maxLevel - b.maxLevel);
+
   return (
     <div ref={containerRef} className="canvas-container">
       <svg
@@ -242,9 +254,11 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             height={GRID_EXTENT_MM * 2}
             fill="url(#grid-major)"
           />
-          {[...graph.pieces.values()].map((piece) => {
+          {piecesByRenderOrder.map(({ piece, minLevel, maxLevel }) => {
             const def = PIECE_DEFS_BY_TYPE[piece.type];
             const isSelected = piece.id === selectedId;
+            const isLevelPiece = minLevel !== 0 || maxLevel !== 0;
+            const levelClass = maxLevel > 0 ? "piece-elevated" : minLevel < 0 ? "piece-depressed" : undefined;
             return (
               <g
                 key={piece.id}
@@ -254,6 +268,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                   e.stopPropagation();
                   onPieceClick(piece.id);
                 }}
+                className={levelClass}
                 style={{ cursor: "pointer" }}
               >
                 {def.outlines.map((outline, i) => (
@@ -276,6 +291,19 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                     />
                   );
                 })}
+                {isLevelPiece &&
+                  (() => {
+                    const cx = def.outlines[0].reduce((s, p) => s + p.x, 0) / def.outlines[0].length;
+                    const cy = def.outlines[0].reduce((s, p) => s + p.y, 0) / def.outlines[0].length;
+                    const label = minLevel === maxLevel ? `L${maxLevel}` : `L${minLevel}↔L${maxLevel}`;
+                    return (
+                      <g transform={`translate(${cx} ${cy}) rotate(${-piece.transform.rotationDeg})`}>
+                        <text className="level-badge-text" textAnchor="middle" dominantBaseline="central">
+                          {label}
+                        </text>
+                      </g>
+                    );
+                  })()}
               </g>
             );
           })}
@@ -365,6 +393,17 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                     <circle r={5} fill={SOCKET_COLOR} />
                     <circle r={2.4} fill="var(--bg)" />
                   </>
+                )}
+                {fp.worldLevel !== 0 && (
+                  <text
+                    className="level-badge-text port-level-text"
+                    x={7}
+                    y={-7}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                  >
+                    L{fp.worldLevel}
+                  </text>
                 )}
               </g>
             );

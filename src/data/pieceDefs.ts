@@ -208,14 +208,32 @@ function pegCoupler(): PieceDef {
   };
 }
 
+// The ramp that climbs from ground level (socket) to the elevated deck
+// (peg) — see track-spec.json's bridgeGround entry for where the level
+// change comes from.
+function bridgeGround(): PieceDef {
+  const length = spec.pieces.bridgeGround.lengthMm.value;
+  const ports: Port[] = [
+    { id: "a", x: 0, y: 0, headingDeg: 180, gender: "socket", level: 0 },
+    { id: "b", x: length, y: 0, headingDeg: 0, gender: "peg", level: 1 },
+  ];
+  return {
+    type: "bridgeGround",
+    label: "Bridge Ramp — Up",
+    shortLabel: "Ramp Up",
+    ports,
+    outlines: [straightOutline(length)],
+  };
+}
+
 // The far-side ramp of a bridge crossing — see track-spec.json's
 // bridgeSlope entry for why both ends are sockets (not the usual one
 // socket/one peg pattern every other piece here follows).
 function bridgeSlope(): PieceDef {
   const length = spec.pieces.bridgeSlope.lengthMm.value;
   const ports: Port[] = [
-    { id: "a", x: 0, y: 0, headingDeg: 180, gender: "socket" },
-    { id: "b", x: length, y: 0, headingDeg: 0, gender: "socket" },
+    { id: "a", x: 0, y: 0, headingDeg: 180, gender: "socket", level: 0 },
+    { id: "b", x: length, y: 0, headingDeg: 0, gender: "socket", level: -1 },
   ];
   return {
     type: "bridgeSlope",
@@ -367,7 +385,7 @@ export const PIECE_DEFS: PieceDef[] = [
   pegCoupler(),
   snake(false),
   snake(true),
-  straightLike("bridgeGround", "Bridge Ramp — Up", "Ramp Up", spec.pieces.bridgeGround.lengthMm.value),
+  bridgeGround(),
   bridgeSlope(),
 ];
 
