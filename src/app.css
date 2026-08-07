@@ -477,6 +477,20 @@ button {
   fill: var(--accent-soft);
 }
 
+/* The real wheel-flange well grooves, sourced from track-spec.json's
+   wellSpacingMm (their position) — see pieceDefs.ts. Drawn at a constant
+   on-screen thickness rather than the real wellWidthTopMm (6.75mm),
+   matching .piece-outline's own non-scaling stroke: legible detail, not
+   a claim that this pixel width is to scale at every zoom level. */
+.piece-groove {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.1;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
 /* Height tiers: a bridge ramp's own type already says what it is, but once
    several pieces are stacked at different heights (or a piece is simply
    not at the layout's starting level), a dashed, tinted outline plus a

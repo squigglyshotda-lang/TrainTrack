@@ -15,14 +15,74 @@ import type { Point, Transform } from "../model/geometry";
 import type { PieceDef, Port } from "../model/types";
 
 const W = spec.trackProfile.widthMm.value;
+// Real, sourced detail the 2D canvas draws on top of every outline below —
+// previously present only in track-spec.json and unused anywhere in the
+// app. CHAMFER rounds each piece's sharp outline corners a little (real
+// printed edges aren't knife-sharp); WELL_SPACING places the two parallel
+// "well" grooves down the centre of every piece, where a real wheel
+// flange actually runs (their on-screen width comes from the same
+// wellWidthTopMm value, applied as a stroke width in Canvas.tsx).
+const CHAMFER = spec.trackProfile.chamferMm.value;
+const WELL_SPACING = spec.trackProfile.wellSpacingMm.value;
+
+// A rectangle from (x0,y0) to (x1,y1) with each corner cut back by
+// `chamfer` along both edges, instead of a sharp corner.
+function chamferedRect(x0: number, x1: number, y0: number, y1: number, chamfer: number): Point[] {
+  return [
+    { x: x0 + chamfer, y: y0 },
+    { x: x1 - chamfer, y: y0 },
+    { x: x1, y: y0 + chamfer },
+    { x: x1, y: y1 - chamfer },
+    { x: x1 - chamfer, y: y1 },
+    { x: x0 + chamfer, y: y1 },
+    { x: x0, y: y1 - chamfer },
+    { x: x0, y: y0 + chamfer },
+  ];
+}
 
 function straightOutline(length: number): Point[] {
+  return chamferedRect(0, length, -W / 2, W / 2, CHAMFER);
+}
+
+// The two parallel well grooves running the length of a straight rectangle
+// from (x0,y0) to (x1,y1) — offset perpendicular to whichever axis is the
+// long one, so this works for both a normal along-X run and crossing4's
+// along-Y cross arm without the caller needing to say which.
+function rectGrooves(x0: number, x1: number, y0: number, y1: number): Point[][] {
+  const half = WELL_SPACING / 2;
+  if (x1 - x0 >= y1 - y0) {
+    const yMid = (y0 + y1) / 2;
+    return [
+      [{ x: x0, y: yMid - half }, { x: x1, y: yMid - half }],
+      [{ x: x0, y: yMid + half }, { x: x1, y: yMid + half }],
+    ];
+  }
+  const xMid = (x0 + x1) / 2;
   return [
-    { x: 0, y: -W / 2 },
-    { x: length, y: -W / 2 },
-    { x: length, y: W / 2 },
-    { x: 0, y: W / 2 },
+    [{ x: xMid - half, y: y0 }, { x: xMid - half, y: y1 }],
+    [{ x: xMid + half, y: y0 }, { x: xMid + half, y: y1 }],
   ];
+}
+
+function straightGrooves(length: number): Point[][] {
+  return rectGrooves(0, length, 0, 0);
+}
+
+// One well groove's arc, at `offset` from the piece's own centerline —
+// same sampling curveSectorOutline uses for the outline edges, just one
+// line instead of an outer/inner pair.
+function curveArcPolyline(radius: number, arcAngleDeg: number, offset: number, samples = 20): Point[] {
+  const pts: Point[] = [];
+  for (let i = 0; i <= samples; i++) {
+    const sweep = (arcAngleDeg * i) / samples;
+    pts.push(curveArcPoint(radius, arcAngleDeg, sweep, offset));
+  }
+  return pts;
+}
+
+function curveGrooves(radius: number, arcAngleDeg: number): Point[][] {
+  const half = WELL_SPACING / 2;
+  return [curveArcPolyline(radius, arcAngleDeg, half), curveArcPolyline(radius, arcAngleDeg, -half)];
 }
 
 function straightLike(type: string, label: string, shortLabel: string, length: number): PieceDef {
@@ -30,7 +90,14 @@ function straightLike(type: string, label: string, shortLabel: string, length: n
     { id: "a", x: 0, y: 0, headingDeg: 180, gender: "socket" },
     { id: "b", x: length, y: 0, headingDeg: 0, gender: "peg" },
   ];
-  return { type, label, shortLabel, ports, outlines: [straightOutline(length)] };
+  return {
+    type,
+    label,
+    shortLabel,
+    ports,
+    outlines: [straightOutline(length)],
+    grooves: straightGrooves(length),
+  };
 }
 
 function curveSectorOutline(radius: number, arcAngleDeg: number, samples = 20): Point[] {
@@ -56,7 +123,14 @@ function curveLike(
     { id: "a", x: 0, y: 0, headingDeg: 180, gender: "socket" },
     { id: "b", x: end.x, y: end.y, headingDeg: arcAngleDeg, gender: "peg" },
   ];
-  return { type, label, shortLabel, ports, outlines: [curveSectorOutline(radius, arcAngleDeg)] };
+  return {
+    type,
+    label,
+    shortLabel,
+    ports,
+    outlines: [curveSectorOutline(radius, arcAngleDeg)],
+    grooves: curveGrooves(radius, arcAngleDeg),
+  };
 }
 
 function switchY(): PieceDef {
@@ -76,6 +150,7 @@ function switchY(): PieceDef {
     shortLabel: "Y-Switch",
     ports,
     outlines: [curveSectorOutline(radius, angle), curveSectorOutline(radius, -angle)],
+    grooves: [...curveGrooves(radius, angle), ...curveGrooves(radius, -angle)],
   };
 }
 
@@ -109,12 +184,15 @@ function switchCurveStraight(mirrorBranch: boolean): PieceDef {
     shortLabel: mirrorBranch ? "Switch C+S (mirror)" : "Switch C+S",
     ports,
     outlines: [straightOutline(s.straightLengthMm.value), curveSectorOutline(s.curveRadiusMm.value, branchAngle)],
+    grooves: [...straightGrooves(s.straightLengthMm.value), ...curveGrooves(s.curveRadiusMm.value, branchAngle)],
   };
 }
 
 // A short accessory with a peg at BOTH ends, for joining two pieces that
 // are both socket-ended and facing each other — the one case an ordinary
-// piece (always one peg, one socket) can't handle.
+// piece (always one peg, one socket) can't handle. Narrower than the
+// standard track width, so it doesn't get well grooves — a real wheel
+// never rolls the length of this piece the way it does a running rail.
 function dogbone(): PieceDef {
   const length = spec.pieces.dogbone.lengthMm.value;
   const width = spec.pieces.dogbone.widthMm.value;
@@ -122,12 +200,7 @@ function dogbone(): PieceDef {
     { id: "a", x: 0, y: 0, headingDeg: 180, gender: "peg" },
     { id: "b", x: length, y: 0, headingDeg: 0, gender: "peg" },
   ];
-  const outline: Point[] = [
-    { x: 0, y: -width / 2 },
-    { x: length, y: -width / 2 },
-    { x: length, y: width / 2 },
-    { x: 0, y: width / 2 },
-  ];
+  const outline = chamferedRect(0, length, -width / 2, width / 2, CHAMFER);
   return { type: "dogbone", label: "Dogbone Connector", shortLabel: "Dogbone", ports, outlines: [outline] };
 }
 
@@ -140,19 +213,16 @@ function crossing4(): PieceDef {
     { id: "b1", x: 0, y: -half, headingDeg: -90, gender: "socket" },
     { id: "b2", x: 0, y: half, headingDeg: 90, gender: "peg" },
   ];
-  const armA: Point[] = [
-    { x: -half, y: -W / 2 },
-    { x: half, y: -W / 2 },
-    { x: half, y: W / 2 },
-    { x: -half, y: W / 2 },
-  ];
-  const armB: Point[] = [
-    { x: -W / 2, y: -half },
-    { x: W / 2, y: -half },
-    { x: W / 2, y: half },
-    { x: -W / 2, y: half },
-  ];
-  return { type: "crossing4", label: "4-Way Crossing", shortLabel: "Crossing", ports, outlines: [armA, armB] };
+  const armA = chamferedRect(-half, half, -W / 2, W / 2, CHAMFER);
+  const armB = chamferedRect(-W / 2, W / 2, -half, half, CHAMFER);
+  return {
+    type: "crossing4",
+    label: "4-Way Crossing",
+    shortLabel: "Crossing",
+    ports,
+    outlines: [armA, armB],
+    grooves: [...rectGrooves(-half, half, 0, 0), ...rectGrooves(0, 0, -half, half)],
+  };
 }
 
 // A compact spur off a through line: crossing4's through-axis (identical
@@ -167,24 +237,15 @@ function crossing4Spur(): PieceDef {
     { id: "b1", x: 0, y: -crossHalf, headingDeg: -90, gender: "peg" },
     { id: "b2", x: 0, y: crossHalf, headingDeg: 90, gender: "peg" },
   ];
-  const armA: Point[] = [
-    { x: -throughHalf, y: -W / 2 },
-    { x: throughHalf, y: -W / 2 },
-    { x: throughHalf, y: W / 2 },
-    { x: -throughHalf, y: W / 2 },
-  ];
-  const armB: Point[] = [
-    { x: -W / 2, y: -crossHalf },
-    { x: W / 2, y: -crossHalf },
-    { x: W / 2, y: crossHalf },
-    { x: -W / 2, y: crossHalf },
-  ];
+  const armA = chamferedRect(-throughHalf, throughHalf, -W / 2, W / 2, CHAMFER);
+  const armB = chamferedRect(-W / 2, W / 2, -crossHalf, crossHalf, CHAMFER);
   return {
     type: "crossing4Spur",
     label: "Crossing (Short Spur)",
     shortLabel: "Crossing Spur",
     ports,
     outlines: [armA, armB],
+    grooves: [...rectGrooves(-throughHalf, throughHalf, 0, 0), ...rectGrooves(0, 0, -crossHalf, crossHalf)],
   };
 }
 
@@ -203,6 +264,7 @@ function pegCoupler(): PieceDef {
     shortLabel: "Peg Coupler",
     ports,
     outlines: [straightOutline(length)],
+    grooves: straightGrooves(length),
     hidden: true,
     attachOnly: true,
   };
@@ -227,6 +289,7 @@ function bridgeGround(): PieceDef {
     shortLabel: "Ramp Up",
     ports,
     outlines: [straightOutline(length)],
+    grooves: straightGrooves(length),
   };
 }
 
@@ -246,15 +309,47 @@ function bridgeSlope(): PieceDef {
     shortLabel: "Ramp Down",
     ports,
     outlines: [straightOutline(length)],
+    grooves: straightGrooves(length),
   };
 }
 
-// Builds the outline for one "half" of the snake piece's S-curve: a
-// straight run of `extMm`, then an arc of `arcAngleDeg` at `radiusMm`,
-// walked forward from (originPos, originHeadingDeg). Returns the outer and
-// inner offset polylines (each +-W/2 off the centerline) plus where the
-// walk ended up, so the caller can chain segments and close the polygon
-// the same way curveSectorOutline() does for a single curve.
+// Builds the outline (or, at a given `offset`, one well groove) for one
+// "half" of the snake piece's S-curve: a straight run of `extMm`, then an
+// arc of `arcAngleDeg` at `radiusMm`, walked forward from (originPos,
+// originHeadingDeg). Returns the walked points plus where the walk ended
+// up, so the caller can chain segments — used twice per snake piece, once
+// per outline edge (+-W/2) and once per groove (+-WELL_SPACING/2), all
+// through the exact same path.
+function walkSegmentAtOffset(
+  originPos: Point,
+  originHeadingDeg: number,
+  kind: "straight" | "arc",
+  length: number,
+  radiusMm: number,
+  arcAngleDeg: number,
+  offset: number
+): { points: Point[]; endPos: Point; endHeadingDeg: number } {
+  const t: Transform = { x: originPos.x, y: originPos.y, rotationDeg: originHeadingDeg };
+  if (kind === "straight") {
+    return {
+      points: [applyTransform(t, { x: 0, y: offset }), applyTransform(t, { x: length, y: offset })],
+      endPos: applyTransform(t, { x: length, y: 0 }),
+      endHeadingDeg: originHeadingDeg,
+    };
+  }
+  const samples = 12;
+  const points: Point[] = [];
+  for (let i = 0; i <= samples; i++) {
+    const sweep = (arcAngleDeg * i) / samples;
+    points.push(applyTransform(t, curveArcPoint(radiusMm, arcAngleDeg, sweep, offset)));
+  }
+  return {
+    points,
+    endPos: applyTransform(t, curveArcEndpoint(radiusMm, arcAngleDeg)),
+    endHeadingDeg: originHeadingDeg + arcAngleDeg,
+  };
+}
+
 function walkSegment(
   originPos: Point,
   originHeadingDeg: number,
@@ -263,29 +358,9 @@ function walkSegment(
   radiusMm: number,
   arcAngleDeg: number
 ): { outer: Point[]; inner: Point[]; endPos: Point; endHeadingDeg: number } {
-  const t: Transform = { x: originPos.x, y: originPos.y, rotationDeg: originHeadingDeg };
-  if (kind === "straight") {
-    return {
-      outer: [applyTransform(t, { x: 0, y: W / 2 }), applyTransform(t, { x: length, y: W / 2 })],
-      inner: [applyTransform(t, { x: 0, y: -W / 2 }), applyTransform(t, { x: length, y: -W / 2 })],
-      endPos: applyTransform(t, { x: length, y: 0 }),
-      endHeadingDeg: originHeadingDeg,
-    };
-  }
-  const samples = 12;
-  const outer: Point[] = [];
-  const inner: Point[] = [];
-  for (let i = 0; i <= samples; i++) {
-    const sweep = (arcAngleDeg * i) / samples;
-    outer.push(applyTransform(t, curveArcPoint(radiusMm, arcAngleDeg, sweep, W / 2)));
-    inner.push(applyTransform(t, curveArcPoint(radiusMm, arcAngleDeg, sweep, -W / 2)));
-  }
-  return {
-    outer,
-    inner,
-    endPos: applyTransform(t, curveArcEndpoint(radiusMm, arcAngleDeg)),
-    endHeadingDeg: originHeadingDeg + arcAngleDeg,
-  };
+  const outer = walkSegmentAtOffset(originPos, originHeadingDeg, kind, length, radiusMm, arcAngleDeg, W / 2);
+  const inner = walkSegmentAtOffset(originPos, originHeadingDeg, kind, length, radiusMm, arcAngleDeg, -W / 2);
+  return { outer: outer.points, inner: inner.points, endPos: outer.endPos, endHeadingDeg: outer.endHeadingDeg };
 }
 
 // An S-shaped "sidestep": two equal-and-opposite arcs bring the track back
@@ -333,6 +408,17 @@ function snake(mirror: boolean): PieceDef {
   const inner = [...seg1.inner, ...seg2.inner, ...seg3.inner, ...seg4.inner];
   const outline = [...outer, ...inner.reverse()];
 
+  // Same four-segment walk, at the well-groove offsets instead of the
+  // outline edges.
+  const grooveChain = (offset: number): Point[] => {
+    const g1 = walkSegmentAtOffset({ x: 0, y: 0 }, 0, "straight", outlineExtMm, radius, 0, offset);
+    const g2 = walkSegmentAtOffset(g1.endPos, g1.endHeadingDeg, "arc", 0, radius, handAngle, offset);
+    const g3 = walkSegmentAtOffset(g2.endPos, g2.endHeadingDeg, "arc", 0, radius, -handAngle, offset);
+    const g4 = walkSegmentAtOffset(g3.endPos, g3.endHeadingDeg, "straight", outlineExtMm, radius, 0, offset);
+    return [...g1.points, ...g2.points, ...g3.points, ...g4.points];
+  };
+  const half = WELL_SPACING / 2;
+
   const exitY = mirror ? -sidestep : sidestep;
   const ports: Port[] = [
     { id: "a", x: 0, y: 0, headingDeg: 180, gender: "socket" },
@@ -345,6 +431,7 @@ function snake(mirror: boolean): PieceDef {
     shortLabel: mirror ? "Snake (mirror)" : "Snake",
     ports,
     outlines: [outline],
+    grooves: [grooveChain(half), grooveChain(-half)],
     hidden: mirror,
   };
 }

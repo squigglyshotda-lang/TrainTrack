@@ -72,6 +72,18 @@ separately.
   wins over the current selection, and the tag for a selected piece stays
   up even after the pointer moves away (so it doesn't disappear right
   when the selection menu appears above it).
+- Every piece's outline carries two more pieces of real, sourced detail
+  that used to sit unused in track-spec.json: each sharp corner is cut
+  back by the real chamfer (1.5mm — printed edges aren't knife-sharp),
+  and the twin "well" grooves a real wheel's flange runs in are drawn
+  down the centre of the piece, positioned by the real well spacing
+  (25.7mm) and following the piece's actual centerline — straight down a
+  straight, along the arc of a curve, forking at a Y-turnout, through the
+  S-curve of a snake. Both apply to the piece's outline data, so PDF
+  export and the piece-library thumbnails pick them up automatically; the
+  grooves themselves are drawn only on the main canvas, not the small
+  thumbnails, since well width would appear all-out-of-proportion at that
+  scale.
 - The canvas background is a real grid, not decoration: dots every 25mm, a
   bolder line every 100mm (one straight piece's length), drawn in world
   units so it pans and zooms with the layout instead of sitting fixed on

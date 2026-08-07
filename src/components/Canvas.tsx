@@ -285,6 +285,9 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                     className={isSelected ? "piece-outline piece-outline-selected" : "piece-outline"}
                   />
                 ))}
+                {def.grooves?.map((groove, i) => (
+                  <polyline key={i} points={groove.map((p) => `${p.x},${p.y}`).join(" ")} className="piece-groove" />
+                ))}
                 {def.ports.map((port) => {
                   const isOccupied = occupied.has(`${piece.id}:${port.id}`);
                   if (!isOccupied) return null;

@@ -34,6 +34,12 @@ export interface PieceDef {
   // polygons are used for pieces whose body isn't a single simple shape
   // (a Y-turnout's two branches, a crossing's two arms).
   outlines: { x: number; y: number }[][];
+  // The real "well" grooves (wheel-flange channels) running down the
+  // centre of the piece, one open polyline per groove — real, sourced
+  // detail (see track-spec.json's wellSpacingMm/wellWidthTopMm), not a
+  // closed shape like outlines. Omitted for the one piece too narrow to
+  // carry them (the dogbone connector).
+  grooves?: { x: number; y: number }[][];
   // True for pieces that exist in the data model (so they can be exported,
   // saved/loaded, etc.) but aren't offered in the palette, the piece
   // library, or the root-placement picker — mirror-image pieces (reached
