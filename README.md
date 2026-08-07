@@ -31,6 +31,17 @@ separately.
   thumbnail of each piece's shape — not just its name. The dogbone
   connector (see below) and mirror-image pieces are left out of both —
   mirrors are reached via Flip instead of being separate entries.
+- The layout doesn't have to be one connected structure. Clicking any
+  empty spot on the canvas — not just when it's completely blank — opens
+  the same picker to drop a new, independent piece right there, and every
+  card in the Piece Library does the same (offset clear of whatever's
+  already there, since it has no click position of its own to go on).
+  This is the same "detach into an independent root" the graph already
+  does when you delete a piece with things built on top of it — it was
+  already a forest, not strictly one tree — just reachable directly
+  instead of only as a side effect of deletion. Handy for building two
+  separate layouts at once, or dropping a few Y-turnouts down to compare
+  before deciding where either one actually goes.
 - Click a placed piece to select it — a contextual menu appears with
   **Flip** (mirrors the piece in place, only shown for pieces that have a
   genuinely different mirror image), **Rotate** (a quarter turn, only shown

@@ -793,12 +793,7 @@ button {
   transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
-.palette-card:disabled {
-  cursor: default;
-  opacity: 0.72;
-}
-
-.palette-card:not(:disabled):hover {
+.palette-card:hover {
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 6px 14px var(--shadow);
 }

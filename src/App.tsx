@@ -18,7 +18,7 @@ import { exportLayoutAsPdf } from "./model/exportPdf";
 import { buildShareUrl, readLayoutFromLocationHash } from "./model/shareLink";
 import { findJoinPath, findReachablePortKeys, placeJoinPath } from "./model/autoJoin";
 import { fitDrawnPath } from "./model/drawFit";
-import type { Point } from "./model/geometry";
+import type { Point, Transform } from "./model/geometry";
 import "./app.css";
 
 // Three.js is a meaningful chunk of bundle weight, so the 3D view is only
@@ -33,6 +33,11 @@ interface SelectedPort {
 interface PendingPick {
   screenPos: { x: number; y: number };
   target: { pieceId: string; portId: string; gender: Gender } | null;
+  // Where a new root piece should land — only meaningful when target is
+  // null. Set from the actual click position for a canvas click; left
+  // undefined for the Palette (which has no click position of its own),
+  // falling back to placeRoot's own origin default.
+  rootWorldPos?: Point;
 }
 
 interface HistoryState {
@@ -133,14 +138,17 @@ export default function App() {
     });
   };
 
-  const handleEmptyCanvasClick = (screenPos: { x: number; y: number }) => {
+  // Clicking any empty spot on the canvas opens the picker to place a new,
+  // independent root piece right there — not just for the very first piece
+  // in a layout. The graph is a forest, not strictly one tree (deleting a
+  // root already detaches its children into new roots of their own, see
+  // graph.ts), so nothing about placing a second unconnected piece is
+  // actually new to the model here; this just lets a user reach it
+  // directly instead of only as a side effect of deletion.
+  const handleEmptyCanvasClick = (screenPos: { x: number; y: number }, worldPos: Point) => {
     setSelectedId(null);
     clearJoinSelection();
-    if (graph.isEmpty()) {
-      setPending({ screenPos, target: null });
-    } else {
-      setPending(null);
-    }
+    setPending({ screenPos, target: null, rootWorldPos: worldPos });
   };
 
   // Picks `info` as the Smart Join source and searches every other free
@@ -245,7 +253,8 @@ export default function App() {
   const handleChoose = (type: string, portId: string) => {
     if (!pending) return;
     if (pending.target === null) {
-      graph.placeRoot(type);
+      const t = pending.rootWorldPos;
+      graph.placeRoot(type, undefined, t ? { x: t.x, y: t.y, rotationDeg: 0 } : undefined);
     } else {
       graph.attach(pending.target.pieceId, pending.target.portId, type, portId);
     }
@@ -253,9 +262,21 @@ export default function App() {
     commit();
   };
 
+  // Where a new, unconnected root piece lands when placed via the Palette,
+  // which (unlike a canvas click) has no click position of its own to go
+  // on: offset to the right of everything already on the canvas, so it's
+  // always reachable and never lands stacked exactly on existing pieces
+  // the way placeRoot's own (0,0,0) default would once something's
+  // already there.
+  const ROOT_PLACEMENT_MARGIN_MM = 60;
+  const nextRootTransform = (): Transform | undefined => {
+    const bbox = graph.boundingBox();
+    if (!bbox) return undefined;
+    return { x: bbox.maxX + ROOT_PLACEMENT_MARGIN_MM, y: bbox.minY, rotationDeg: 0 };
+  };
+
   const handlePaletteSelectRoot = (type: string) => {
-    if (!graph.isEmpty()) return;
-    graph.placeRoot(type);
+    graph.placeRoot(type, undefined, nextRootTransform());
     commit();
   };
 

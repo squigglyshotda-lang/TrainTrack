@@ -17,7 +17,7 @@ interface CanvasProps {
   onPortClick: (info: FreePortInfo, screenPos: { x: number; y: number }) => void;
   onDrawPathComplete: (info: FreePortInfo, worldPoints: Point[]) => void;
   onPieceClick: (pieceId: string) => void;
-  onEmptyCanvasClick: (screenPos: { x: number; y: number }) => void;
+  onEmptyCanvasClick: (screenPos: { x: number; y: number }, worldPos: Point) => void;
   selectedId: string | null;
   closures: ClosurePair[];
   onFlipSelected: (pieceId: string) => void;
@@ -171,7 +171,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     const moved = dragState.current?.moved ?? false;
     dragState.current = null;
     if (!moved) {
-      onEmptyCanvasClick(toLocal(e.clientX, e.clientY));
+      onEmptyCanvasClick(toLocal(e.clientX, e.clientY), toWorld(e.clientX, e.clientY));
     }
   };
 

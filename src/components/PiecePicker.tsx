@@ -7,15 +7,16 @@ import type { Gender, Port } from "../model/types";
 interface PiecePickerProps {
   screenPos: { x: number; y: number };
   // The gender the piece being attached must offer at its connecting port.
-  // Undefined when placing the very first piece, which has nothing to mate
-  // against.
+  // Undefined when placing a new, independent root piece (the very first
+  // one in a layout, or another unconnected one alongside it), which has
+  // nothing to mate against.
   requiredGender?: Gender;
   onChoose: (type: string, portId: string) => void;
   onCancel: () => void;
   // Jumps straight into Smart Join using the port this picker was opened
   // for as the source, instead of attaching one specific piece. Only
   // meaningful when there's an actual port involved (requiredGender set) —
-  // undefined when placing the very first piece.
+  // undefined when placing a new, independent root piece.
   onSmartJoin?: () => void;
 }
 
@@ -33,9 +34,10 @@ export default function PiecePicker({
   const [pendingType, setPendingType] = useState<string | null>(null);
   const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
 
-  // Placing the very first piece (no target to match) only offers the
-  // normal browsable set; attaching onto an existing port also offers the
-  // dogbone when it's the only compatible piece (see ATTACHABLE_PIECE_DEFS).
+  // Placing a new, independent root piece (no target to match) only offers
+  // the normal browsable set; attaching onto an existing port also offers
+  // the dogbone when it's the only compatible piece (see
+  // ATTACHABLE_PIECE_DEFS).
   const pool = requiredGender ? ATTACHABLE_PIECE_DEFS : VISIBLE_PIECE_DEFS;
   const options = pool.filter((def) => compatiblePorts(def.ports, requiredGender).length > 0);
 
@@ -82,7 +84,7 @@ export default function PiecePicker({
   return (
     <div className="piece-picker piece-picker-grid-wrap" style={style}>
       <div className="piece-picker-header">
-        <span>{requiredGender ? `Attach a piece (needs a ${requiredGender})` : "Place first piece"}</span>
+        <span>{requiredGender ? `Attach a piece (needs a ${requiredGender})` : "Place a new piece"}</span>
         <button className="piece-picker-close" onClick={onCancel}>
           ×
         </button>
@@ -101,9 +103,9 @@ export default function PiecePicker({
               className="palette-card"
               title={def.label}
               onClick={() => {
-                // Placing the very first piece: no target port to match, so
-                // which local port we "used" is irrelevant. Skip straight
-                // to placing it.
+                // Placing a new, independent root piece: no target port to
+                // match, so which local port we "used" is irrelevant. Skip
+                // straight to placing it.
                 if (!requiredGender || ports.length === 1) onChoose(def.type, ports[0].id);
                 else setPendingType(def.type);
               }}
