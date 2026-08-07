@@ -214,14 +214,20 @@ same file Export STL bundles), not a schematic approximation: each STL's
 own local coordinate frame was measured (via three's `STLLoader` run
 against every file in `public/stl/`) and compared against this app's own
 outline/port bounding box to find the transform (an offset, and for the
-handful of files whose internal axes run the other way, an axis swap)
-that lines the mesh up with this app's port-local frame — see
-`src/data/stlAlignment.ts` for the reasoning and `src/components/
-Canvas3D.tsx` for where it's applied. That transform was derived from
-measurement, not guessed, but it also isn't a substitute for actually
-looking: it was checked by rendering connected pairs of every piece
-family (straight, both curves, both switches, the crossings, the snake)
-and confirming the ports meet with no visible gap or overlap.
+handful of files whose travel axis runs along their own Y instead of X,
+a real 90° rotation about the vertical axis) that lines the mesh up with
+this app's port-local frame — see `src/data/stlAlignment.ts` for the
+reasoning and `src/components/Canvas3D.tsx` for where it's applied. That
+transform was derived from measurement, not guessed, but measurement
+alone wasn't enough to catch every mistake: an early version used a bare
+coordinate swap for those rotated files instead of an actual rotation —
+mathematically a reflection, not a rotation, which mirrors a piece's fine
+detail but doesn't show up as a visible gap between two connected pieces
+(the check used at the time). It only became obvious once a *closed loop*
+of the affected pieces was rendered and didn't close — see that file's
+comment for the fix. Any future changes here should re-check against a
+closed loop (Simple Circle, Tight Quad Loop, or Switch Yard all work),
+not just an isolated connected pair.
 **bridgeGround and bridgeSlope are the two exceptions** — their real STL
 height varies continuously along the piece (the actual ramp profile,
 not a flat 12mm slab), and getting the same swap-plus-axis-flip fix

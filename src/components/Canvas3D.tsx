@@ -74,14 +74,22 @@ async function loadStlGeometry(type: string): Promise<THREE.BufferGeometry> {
   const geometry = new STLLoader().parse(buffer);
 
   const m = new THREE.Matrix4();
-  if (alignment.swapXY) {
-    // Swapping X/Y alone would mirror the mesh (negative determinant), so
-    // Z is negated too (then re-offset by the mesh's own real height) to
-    // keep this a proper rotation — see stlAlignment.ts's file comment.
+  if (alignment.rotate === "cw90") {
+    // (x, y) -> (y, -x): a real 90deg rotation about Z (proper, det +1),
+    // not a bare axis swap — see stlAlignment.ts's file comment for why
+    // that distinction matters. Z is untouched.
     m.set(
       0, 1, 0, alignment.offsetX,
+      -1, 0, 0, alignment.offsetY,
+      0, 0, 1, 0,
+      0, 0, 0, 1
+    );
+  } else if (alignment.rotate === "ccw90") {
+    // (x, y) -> (-y, x): the other direction.
+    m.set(
+      0, -1, 0, alignment.offsetX,
       1, 0, 0, alignment.offsetY,
-      0, 0, -1, entry.heightMm,
+      0, 0, 1, 0,
       0, 0, 0, 1
     );
   } else {
