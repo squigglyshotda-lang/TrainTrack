@@ -15,16 +15,15 @@ interface Canvas3DProps {
   layout: SerializedLayout;
 }
 
-// Real sourced track thickness (see track-spec.json) — used for the two
-// bridge ramps' extruded schematic geometry (see below for why they don't
-// use their real STL mesh like every other piece type here).
+// Real sourced track thickness (see track-spec.json) — used for bridgeSlope's
+// extruded schematic geometry, the one piece type still on that path (see
+// stlAlignment.ts for why).
 const TRACK_HEIGHT_MM = spec.trackProfile.heightMm.value;
 
 // A piece with exactly two ports and non-zero riseMm on at least one of
-// them tilts that much over its length; everything else (flat pieces,
-// and every piece with more than two ports, none of which carry riseMm)
-// is untilted. This mirrors elevation3d.ts's own port-to-port walk, just
-// local to a single piece instead of accumulated across the graph.
+// them tilts that much over its length. This mirrors elevation3d.ts's own
+// port-to-port walk, just local to a single piece instead of accumulated
+// across the graph.
 function computeTiltRadians(ports: Port[]): number {
   if (ports.length !== 2) return 0;
   const [a, b] = ports;
@@ -34,14 +33,11 @@ function computeTiltRadians(ports: Port[]): number {
   return Math.atan2(riseB - riseA, b.x - a.x);
 }
 
-// The bridge ramps' geometry: extruded from the same 2D outline the SVG
-// canvas draws, then tilted — see Port.riseMm. Kept schematic rather than
-// switching to the real STL like every other type (see stlAlignment.ts):
-// the real mesh's height varies continuously along the piece (the actual
-// ramp profile), and getting the axis-swap-plus-Z-flip fix right for a
-// non-uniform height field would need more verification than this pass
-// covered with confidence, unlike the flat 12mm types.
-function buildBridgeGeometries(type: string): THREE.BufferGeometry[] {
+// Schematic fallback for any piece type not in STL_ALIGNMENT (currently
+// just bridgeSlope): extruded from the same 2D outline the SVG canvas
+// draws, then tilted by its real riseMm — see Port.riseMm and
+// stlAlignment.ts's bridgeSlope comment for why it's still here.
+function buildSchematicGeometries(type: string): THREE.BufferGeometry[] {
   const def = PIECE_DEFS_BY_TYPE[type];
   const tilt = computeTiltRadians(def.ports);
   return def.outlines.map((outline) => {
@@ -61,9 +57,8 @@ function buildBridgeGeometries(type: string): THREE.BufferGeometry[] {
 // Loads the real printed STL for `type` and remaps its vertices from the
 // mesh's own arbitrary local frame into this app's port-local frame (x =
 // travel, y = lateral, z = thickness-up) using the measured calibration in
-// stlAlignment.ts, then applies the same reorientation the bridge geometry
-// above uses so every piece — real mesh or extruded schematic — ends up in
-// the same local convention before world placement.
+// stlAlignment.ts, then reorients so that frame ends up in the same local
+// convention as world placement expects (x=travel, y=up, z=-lateral).
 async function loadStlGeometry(type: string): Promise<THREE.BufferGeometry> {
   const entry = STL_LIBRARY[type];
   const alignment = STL_ALIGNMENT[type];
@@ -73,15 +68,16 @@ async function loadStlGeometry(type: string): Promise<THREE.BufferGeometry> {
   const buffer = await response.arrayBuffer();
   const geometry = new STLLoader().parse(buffer);
 
+  const offsetZ = alignment.offsetZ ?? 0;
   const m = new THREE.Matrix4();
   if (alignment.rotate === "cw90") {
     // (x, y) -> (y, -x): a real 90deg rotation about Z (proper, det +1),
     // not a bare axis swap — see stlAlignment.ts's file comment for why
-    // that distinction matters. Z is untouched.
+    // that distinction matters. Z is otherwise untouched but for offsetZ.
     m.set(
       0, 1, 0, alignment.offsetX,
       -1, 0, 0, alignment.offsetY,
-      0, 0, 1, 0,
+      0, 0, 1, offsetZ,
       0, 0, 0, 1
     );
   } else if (alignment.rotate === "ccw90") {
@@ -89,14 +85,14 @@ async function loadStlGeometry(type: string): Promise<THREE.BufferGeometry> {
     m.set(
       0, -1, 0, alignment.offsetX,
       1, 0, 0, alignment.offsetY,
-      0, 0, 1, 0,
+      0, 0, 1, offsetZ,
       0, 0, 0, 1
     );
   } else {
     m.set(
       1, 0, 0, alignment.offsetX,
       0, 1, 0, alignment.offsetY,
-      0, 0, 1, 0,
+      0, 0, 1, offsetZ,
       0, 0, 0, 1
     );
   }
@@ -174,12 +170,12 @@ export default function Canvas3D({ layout }: Canvas3DProps) {
       depressed: new THREE.MeshStandardMaterial({ color: depressedColor, roughness: 0.8 }),
     };
 
-    const bridgeGeometryCache = new Map<string, THREE.BufferGeometry[]>();
-    const getBridgeGeometries = (type: string): THREE.BufferGeometry[] => {
-      let geoms = bridgeGeometryCache.get(type);
+    const schematicGeometryCache = new Map<string, THREE.BufferGeometry[]>();
+    const getSchematicGeometries = (type: string): THREE.BufferGeometry[] => {
+      let geoms = schematicGeometryCache.get(type);
       if (!geoms) {
-        geoms = buildBridgeGeometries(type);
-        bridgeGeometryCache.set(type, geoms);
+        geoms = buildSchematicGeometries(type);
+        schematicGeometryCache.set(type, geoms);
       }
       return geoms;
     };
@@ -230,7 +226,7 @@ export default function Canvas3D({ layout }: Canvas3DProps) {
         if (stlGeometry) {
           group.add(new THREE.Mesh(stlGeometry, material));
         } else if (!STL_ALIGNMENT[piece.type]) {
-          for (const geometry of getBridgeGeometries(piece.type)) {
+          for (const geometry of getSchematicGeometries(piece.type)) {
             group.add(new THREE.Mesh(geometry, material));
           }
         }
@@ -246,7 +242,7 @@ export default function Canvas3D({ layout }: Canvas3DProps) {
       cancelAnimationFrame(frameId);
       observer.disconnect();
       controls.dispose();
-      for (const geoms of bridgeGeometryCache.values()) {
+      for (const geoms of schematicGeometryCache.values()) {
         for (const g of geoms) g.dispose();
       }
       materials.flat.dispose();

@@ -35,10 +35,14 @@
 // of swapping-then-flipping Z; verified by rendering the 8×curve45
 // "Simple Circle" template in 3D and confirming it closes into a circle
 // instead of spiraling.
+// offsetZ shifts the mesh vertically after rotation — 0 (or omitted) for
+// every flat 12mm piece, since their own Z already runs 0 at the bottom
+// face, matching this app's own placement baseline with no adjustment.
 export interface StlAlignment {
   rotate: "none" | "cw90" | "ccw90";
   offsetX: number;
   offsetY: number;
+  offsetZ?: number;
 }
 
 export const STL_ALIGNMENT: Record<string, StlAlignment> = {
@@ -58,4 +62,23 @@ export const STL_ALIGNMENT: Record<string, StlAlignment> = {
   switchY: { rotate: "cw90", offsetX: -7.071, offsetY: 20 },
   snake: { rotate: "cw90", offsetX: 1.907, offsetY: 60 },
   snakeMirror: { rotate: "cw90", offsetX: 1.907, offsetY: -60 },
+  // bridgeGround: unlike every flat piece above, its real height genuinely
+  // varies along the piece (an actual rising ramp, not a flat 12mm slab
+  // tilted after the fact) — but its own profile is simple: Z rises
+  // cleanly along the same travel axis every other "cw90" piece uses,
+  // port a sitting right at Z=0 with no adjustment needed. Confirmed by
+  // bucketing the mesh's own vertices by position and checking Z tracks
+  // smoothly with it (see this file's git history for that script).
+  bridgeGround: { rotate: "cw90", offsetX: 0, offsetY: 20, offsetZ: 0 },
+  // bridgeSlope is deliberately NOT here, unlike bridgeGround. Its mesh
+  // includes a full support structure reaching toward the ground well
+  // below either port (bounding box Z up to 74.79, versus a ~10.9mm real
+  // rise), and while the two connector faces WERE locatable (narrow,
+  // near-flat vertex clusters at each Y extreme, 10.71mm apart — close
+  // enough to this piece's own sourced riseMm, 10.87mm, to trust as the
+  // real connection) and gave calibration numbers that looked internally
+  // consistent, rendering it that way produced an unconvincing blocky
+  // mass rather than a recognizable descending ramp — worse than the
+  // schematic it would have replaced. See Canvas3D.tsx, which keeps this
+  // one piece on the extruded schematic + computed-tilt path instead.
 };

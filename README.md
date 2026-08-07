@@ -246,15 +246,28 @@ of the affected pieces was rendered and didn't close — see that file's
 comment for the fix. Any future changes here should re-check against a
 closed loop (Simple Circle, Tight Quad Loop, or Switch Yard all work),
 not just an isolated connected pair.
-**bridgeGround and bridgeSlope are the two exceptions** — their real STL
-height varies continuously along the piece (the actual ramp profile,
-not a flat 12mm slab), and getting the same swap-plus-axis-flip fix
-right for a non-uniform height field wasn't verified with the same
-confidence, so they still use the earlier schematic approach: extruded
-from the same 2D outline the canvas draws, then tilted by a real,
-sourced amount (`riseMm = lengthMm * tan(angleDeg)`, using the source's
-14° bridge angle — kept on `Port.riseMm`, a continuous-mm field separate
-from the discrete `level` used everywhere else).
+**bridgeGround uses its real STL too** — its height rises cleanly along
+the same travel axis every other rotated piece uses, port a sitting
+right at Z=0, so once the rotation-vs-reflection bug above was fixed
+there was nothing left uniquely risky about it. **bridgeSlope is the one
+remaining exception.** Its mesh isn't just a thin sloped deck: it
+includes a full support structure reaching most of the way to the
+ground well below either port, so the piece's own bounding box (74.79mm
+tall) has nothing to do with the ~10.9mm real rise between its two
+connectors. Those two connectors WERE locatable — narrow, near-flat
+vertex clusters near each end of the mesh, 10.71mm apart, matching this
+piece's own sourced `riseMm` (10.87mm) closely enough to trust — and
+calibrating against them produced numbers that looked internally
+consistent. But the rendered result was an unconvincing blocky mass, not
+a recognizable ramp — worse than the schematic it would have replaced.
+So it still uses that schematic approach: extruded from the same 2D
+outline the canvas draws, then tilted by a real, sourced amount
+(`riseMm = lengthMm * tan(angleDeg)`, using the source's 14° bridge
+angle — kept on `Port.riseMm`, a continuous-mm field separate from the
+discrete `level` used everywhere else). Numeric agreement with a sourced
+value turned out not to be sufficient confidence on its own here — this
+is the one piece in the app where the render was the tiebreaker over the
+math.
 
 **Port diagrams.** The "which port?" step of the attach picker — the one
 that used to just list bare port ids like `left`/`right`/`common` — now
@@ -312,8 +325,8 @@ being asked for there. The 2D canvas itself still has no notion of
 physical mm height or grade; it reads level numbers and dashed styling,
 not a rising line. The 3D preview (see "3D preview" above) covers the
 "can I actually picture this in 3D" need instead, and renders real STL
-geometry for most piece types — but the two bridge ramps still fall back
-to a schematic extruded-and-tilted shape rather than their own real,
+geometry for every piece type except bridgeSlope, which still falls back
+to a schematic extruded-and-tilted shape rather than its own real,
 continuously-rising mesh (see "3D preview" for why). **Tunnels:** there's
 no tunnel module or
 pre-generated tunnel STL anywhere in torwan's generator repo, so none is
