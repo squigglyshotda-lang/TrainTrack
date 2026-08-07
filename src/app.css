@@ -380,6 +380,19 @@ button {
   background: var(--bg);
 }
 
+.canvas3d-loading-overlay {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px var(--shadow);
+  pointer-events: none;
+}
+
 /* Real-world-scale grid, drawn in world units so it pans/zooms with the
    layout instead of sitting fixed on screen — see Canvas.tsx's grid-minor /
    grid-major patterns. */
@@ -947,8 +960,51 @@ button {
   font-size: 13px;
 }
 
-.piece-picker-list li button:hover {
+.piece-picker-list li button:hover,
+.piece-picker-list li button.piece-picker-port-hovered {
   background: var(--accent-soft);
+}
+
+.piece-picker-port-gender {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.piece-port-diagram {
+  display: block;
+  width: 100%;
+  height: 160px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.piece-port-diagram-port {
+  cursor: pointer;
+}
+
+.piece-port-diagram-hit {
+  fill: transparent;
+}
+
+.piece-port-diagram-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.piece-port-diagram-label {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: var(--surface-2);
+  stroke-linejoin: round;
+}
+
+.piece-port-diagram-label-hovered {
+  fill: var(--accent-strong);
 }
 
 .piece-picker-grid {

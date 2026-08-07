@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { VISIBLE_PIECE_DEFS, ATTACHABLE_PIECE_DEFS, PIECE_DEFS_BY_TYPE } from "../data/pieceDefs";
 import PieceThumbnail from "./PieceThumbnail";
+import PiecePortDiagram from "./PiecePortDiagram";
 import type { Gender, Port } from "../model/types";
 
 interface PiecePickerProps {
@@ -30,6 +31,7 @@ export default function PiecePicker({
   onSmartJoin,
 }: PiecePickerProps) {
   const [pendingType, setPendingType] = useState<string | null>(null);
+  const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
 
   // Placing the very first piece (no target to match) only offers the
   // normal browsable set; attaching onto an existing port also offers the
@@ -52,10 +54,24 @@ export default function PiecePicker({
           </button>
           <span>{def.label}: which port?</span>
         </div>
+        <PiecePortDiagram
+          def={def}
+          ports={ports}
+          hoveredPortId={hoveredPortId}
+          onSelectPort={(portId) => onChoose(pendingType, portId)}
+          onHoverPort={setHoveredPortId}
+        />
         <ul className="piece-picker-list">
           {ports.map((p) => (
             <li key={p.id}>
-              <button onClick={() => onChoose(pendingType, p.id)}>{p.id}</button>
+              <button
+                onClick={() => onChoose(pendingType, p.id)}
+                onPointerEnter={() => setHoveredPortId(p.id)}
+                onPointerLeave={() => setHoveredPortId(null)}
+                className={p.id === hoveredPortId ? "piece-picker-port-hovered" : undefined}
+              >
+                {p.id} <span className="piece-picker-port-gender">({p.gender})</span>
+              </button>
             </li>
           ))}
         </ul>

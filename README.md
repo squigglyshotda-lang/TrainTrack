@@ -200,22 +200,39 @@ on top.
 
 **3D preview.** The toolbar's 3D View toggle switches from the flat plan
 to an orbitable 3D scene (2D stays the default on load; the 3D view — and
-the `three` library it needs — only loads once you switch to it). It's a
-schematic preview, not a render of the real printed geometry: each piece
-is built by extruding its existing 2D outline (the same polygons the
-canvas and PDF export already draw) up to the track's real 12mm
-thickness, rather than loading the actual STL mesh for each piece type.
-That trade was deliberate — the STL files use inconsistent internal axis
-conventions from one piece family to the next, so aligning eighteen-odd
-real meshes precisely against the port model would be hard to get right
-and harder to verify, where extruding the outline guarantees every port
-lines up by construction. The two bridge ramps are the exception that
-actually tilts: each one's real rise in mm is computed from its own
-sourced length and the source's 14° bridge angle (`riseMm = lengthMm *
-tan(angleDeg)`, kept as `Port.riseMm` — a separate, continuous-mm field
-from the discrete `level` used everywhere else) and applied as a genuine
-geometric tilt on that piece's mesh. Every other piece stays flat, since
-nothing else in the port model carries a grade for it to tilt with.
+the `three` library it needs — only loads once you switch to it). 16 of
+the app's 18 piece types render their real printed STL mesh (the exact
+same file Export STL bundles), not a schematic approximation: each STL's
+own local coordinate frame was measured (via three's `STLLoader` run
+against every file in `public/stl/`) and compared against this app's own
+outline/port bounding box to find the transform (an offset, and for the
+handful of files whose internal axes run the other way, an axis swap)
+that lines the mesh up with this app's port-local frame — see
+`src/data/stlAlignment.ts` for the reasoning and `src/components/
+Canvas3D.tsx` for where it's applied. That transform was derived from
+measurement, not guessed, but it also isn't a substitute for actually
+looking: it was checked by rendering connected pairs of every piece
+family (straight, both curves, both switches, the crossings, the snake)
+and confirming the ports meet with no visible gap or overlap.
+**bridgeGround and bridgeSlope are the two exceptions** — their real STL
+height varies continuously along the piece (the actual ramp profile,
+not a flat 12mm slab), and getting the same swap-plus-axis-flip fix
+right for a non-uniform height field wasn't verified with the same
+confidence, so they still use the earlier schematic approach: extruded
+from the same 2D outline the canvas draws, then tilted by a real,
+sourced amount (`riseMm = lengthMm * tan(angleDeg)`, using the source's
+14° bridge angle — kept on `Port.riseMm`, a continuous-mm field separate
+from the discrete `level` used everywhere else).
+
+**Port diagrams.** The "which port?" step of the attach picker — the one
+that used to just list bare port ids like `left`/`right`/`common` — now
+shows the piece's own outline with every candidate port drawn as a
+labelled, clickable dot at its real position (`PiecePortDiagram.tsx`,
+reusing the same outline data `PieceThumbnail` already draws elsewhere).
+Hovering a port in the list below highlights its dot on the diagram, and
+the dot itself is clickable — so picking a specific branch of a
+Y-turnout or a specific arm of a crossing no longer means guessing what
+a one-letter id refers to.
 
 The source repo also has a real bridge pillar STL
 (`bridge_pillar_14deg_r100mm_s205mm_p50mm.stl`) that this app deliberately
@@ -262,11 +279,11 @@ canvas and to keep closure detection honest — that was the actual gap
 being asked for there. The 2D canvas itself still has no notion of
 physical mm height or grade; it reads level numbers and dashed styling,
 not a rising line. The 3D preview (see "3D preview" above) covers the
-"can I actually picture this in 3D" need instead, but it's schematic —
-extruded outlines with the two ramp pieces' real tilt applied, not a
-render of the real printed STL geometry, and every other piece stays
-perfectly flat since nothing else in the port model carries a grade.
-**Tunnels:** there's no tunnel module or
+"can I actually picture this in 3D" need instead, and renders real STL
+geometry for most piece types — but the two bridge ramps still fall back
+to a schematic extruded-and-tilted shape rather than their own real,
+continuously-rising mesh (see "3D preview" for why). **Tunnels:** there's
+no tunnel module or
 pre-generated tunnel STL anywhere in torwan's generator repo, so none is
 offered here either — adding one would mean inventing dimensions, which
 breaks the one rule

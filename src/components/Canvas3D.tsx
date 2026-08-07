@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import spec from "../data/track-spec.json";
 import { PIECE_DEFS_BY_TYPE } from "../data/pieceDefs";
+import { STL_LIBRARY } from "../data/stlLibrary";
+import { STL_ALIGNMENT } from "../data/stlAlignment";
 import { LayoutGraph } from "../model/graph";
 import type { SerializedLayout } from "../model/graph";
 import { computePieceElevationsMm } from "../model/elevation3d";
@@ -12,11 +15,9 @@ interface Canvas3DProps {
   layout: SerializedLayout;
 }
 
-// Real sourced track thickness (see track-spec.json) — every piece is
-// extruded to this depth regardless of type, matching the flat 12mm
-// profile every piece in the library shares except for the two bridge
-// ramps, whose actual physical rise this preview instead expresses as a
-// tilt (see Port.riseMm) rather than a taller block.
+// Real sourced track thickness (see track-spec.json) — used for the two
+// bridge ramps' extruded schematic geometry (see below for why they don't
+// use their real STL mesh like every other piece type here).
 const TRACK_HEIGHT_MM = spec.trackProfile.heightMm.value;
 
 // A piece with exactly two ports and non-zero riseMm on at least one of
@@ -33,10 +34,14 @@ function computeTiltRadians(ports: Port[]): number {
   return Math.atan2(riseB - riseA, b.x - a.x);
 }
 
-// Builds one extruded, correctly-oriented-and-tilted geometry per outline
-// polygon of a piece type. Shared across every placed instance of that
-// type — position/rotation/level tint are all applied per-mesh instead.
-function buildGeometriesForType(type: string): THREE.BufferGeometry[] {
+// The bridge ramps' geometry: extruded from the same 2D outline the SVG
+// canvas draws, then tilted — see Port.riseMm. Kept schematic rather than
+// switching to the real STL like every other type (see stlAlignment.ts):
+// the real mesh's height varies continuously along the piece (the actual
+// ramp profile), and getting the axis-swap-plus-Z-flip fix right for a
+// non-uniform height field would need more verification than this pass
+// covered with confidence, unlike the flat 12mm types.
+function buildBridgeGeometries(type: string): THREE.BufferGeometry[] {
   const def = PIECE_DEFS_BY_TYPE[type];
   const tilt = computeTiltRadians(def.ports);
   return def.outlines.map((outline) => {
@@ -47,16 +52,49 @@ function buildGeometriesForType(type: string): THREE.BufferGeometry[] {
     });
     shape.closePath();
     const geometry = new THREE.ExtrudeGeometry(shape, { depth: TRACK_HEIGHT_MM, bevelEnabled: false });
-    // Local (x, y) -> (X, Y=thickness, Z=-y): the extrusion's own Z axis
-    // (piece thickness) becomes world-up, and the shape's local y becomes
-    // world -Z, matching the position mapping used below.
     geometry.rotateX(-Math.PI / 2);
-    // Applied in the now-reoriented frame (X = travel, Y = up, Z =
-    // -lateral), so a positive tilt raises Y as X increases — i.e. rises
-    // from port a (x=0) towards port b, matching riseB > riseA.
     if (tilt !== 0) geometry.rotateZ(tilt);
     return geometry;
   });
+}
+
+// Loads the real printed STL for `type` and remaps its vertices from the
+// mesh's own arbitrary local frame into this app's port-local frame (x =
+// travel, y = lateral, z = thickness-up) using the measured calibration in
+// stlAlignment.ts, then applies the same reorientation the bridge geometry
+// above uses so every piece — real mesh or extruded schematic — ends up in
+// the same local convention before world placement.
+async function loadStlGeometry(type: string): Promise<THREE.BufferGeometry> {
+  const entry = STL_LIBRARY[type];
+  const alignment = STL_ALIGNMENT[type];
+  const url = `${import.meta.env.BASE_URL}stl/${entry.fileName}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Could not load ${entry.fileName} (HTTP ${response.status}).`);
+  const buffer = await response.arrayBuffer();
+  const geometry = new STLLoader().parse(buffer);
+
+  const m = new THREE.Matrix4();
+  if (alignment.swapXY) {
+    // Swapping X/Y alone would mirror the mesh (negative determinant), so
+    // Z is negated too (then re-offset by the mesh's own real height) to
+    // keep this a proper rotation — see stlAlignment.ts's file comment.
+    m.set(
+      0, 1, 0, alignment.offsetX,
+      1, 0, 0, alignment.offsetY,
+      0, 0, -1, entry.heightMm,
+      0, 0, 0, 1
+    );
+  } else {
+    m.set(
+      1, 0, 0, alignment.offsetX,
+      0, 1, 0, alignment.offsetY,
+      0, 0, 1, 0,
+      0, 0, 0, 1
+    );
+  }
+  geometry.applyMatrix4(m);
+  geometry.rotateX(-Math.PI / 2);
+  return geometry;
 }
 
 function readCssColor(varName: string, fallback: string): THREE.Color {
@@ -69,13 +107,29 @@ function readCssColor(varName: string, fallback: string): THREE.Color {
   }
 }
 
+// Real STL geometry is shared across every Canvas3D instance and every
+// layout — the file's content never changes — so it's cached at module
+// scope rather than refetched each time the layout changes or the 3D view
+// is toggled off and back on.
+const stlGeometryCache = new Map<string, Promise<THREE.BufferGeometry>>();
+function getStlGeometry(type: string): Promise<THREE.BufferGeometry> {
+  let cached = stlGeometryCache.get(type);
+  if (!cached) {
+    cached = loadStlGeometry(type);
+    stlGeometryCache.set(type, cached);
+  }
+  return cached;
+}
+
 export default function Canvas3D({ layout }: Canvas3DProps) {
   const graph = useMemo(() => LayoutGraph.fromSerialized(layout), [layout]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    let cancelled = false;
 
     const scene = new THREE.Scene();
     scene.background = readCssColor("--bg", "#fbf6ec");
@@ -106,44 +160,23 @@ export default function Canvas3D({ layout }: Canvas3DProps) {
     const pieceColor = readCssColor("--ink", "#332b22");
     const elevatedColor = readCssColor("--level-up", "#b8842a");
     const depressedColor = readCssColor("--level-down", "#2969a3");
-
-    const geometryCache = new Map<string, THREE.BufferGeometry[]>();
-    const getGeometries = (type: string): THREE.BufferGeometry[] => {
-      let geoms = geometryCache.get(type);
-      if (!geoms) {
-        geoms = buildGeometriesForType(type);
-        geometryCache.set(type, geoms);
-      }
-      return geoms;
-    };
-
     const materials = {
       flat: new THREE.MeshStandardMaterial({ color: pieceColor, roughness: 0.8 }),
       elevated: new THREE.MeshStandardMaterial({ color: elevatedColor, roughness: 0.8 }),
       depressed: new THREE.MeshStandardMaterial({ color: depressedColor, roughness: 0.8 }),
     };
 
-    const elevationsMm = computePieceElevationsMm(graph);
-    const pieceGroup = new THREE.Group();
-    for (const piece of graph.pieces.values()) {
-      const zMm = elevationsMm.get(piece.id) ?? 0;
-      // A piece's own level is its local origin's tier, but a ramp's far
-      // port sits a tier away from that — tint by the piece's full level
-      // span (matching Canvas.tsx's piece-elevated/piece-depressed classes)
-      // rather than just its origin, so both ramp pieces read as elevated.
-      const def = PIECE_DEFS_BY_TYPE[piece.type];
-      const portLevels = def.ports.map((p) => piece.level + (p.level ?? 0));
-      const maxLevel = Math.max(...portLevels);
-      const minLevel = Math.min(...portLevels);
-      const material = maxLevel > 0 ? materials.elevated : minLevel < 0 ? materials.depressed : materials.flat;
-      const group = new THREE.Group();
-      for (const geometry of getGeometries(piece.type)) {
-        group.add(new THREE.Mesh(geometry, material));
+    const bridgeGeometryCache = new Map<string, THREE.BufferGeometry[]>();
+    const getBridgeGeometries = (type: string): THREE.BufferGeometry[] => {
+      let geoms = bridgeGeometryCache.get(type);
+      if (!geoms) {
+        geoms = buildBridgeGeometries(type);
+        bridgeGeometryCache.set(type, geoms);
       }
-      group.position.set(piece.transform.x, zMm, -piece.transform.y);
-      group.rotation.y = (piece.transform.rotationDeg * Math.PI) / 180;
-      pieceGroup.add(group);
-    }
+      return geoms;
+    };
+
+    const pieceGroup = new THREE.Group();
     scene.add(pieceGroup);
 
     let frameId = 0;
@@ -165,11 +198,47 @@ export default function Canvas3D({ layout }: Canvas3DProps) {
     const observer = new ResizeObserver(resize);
     observer.observe(container);
 
+    setLoading(true);
+    const elevationsMm = computePieceElevationsMm(graph);
+    const types = new Set([...graph.pieces.values()].map((p) => p.type));
+    const stlTypes = [...types].filter((t) => STL_ALIGNMENT[t]);
+    Promise.all(
+      stlTypes.map(async (t) => [t, await getStlGeometry(t).catch(() => null)] as const)
+    ).then((resolved) => {
+      if (cancelled) return;
+      // Only pieces whose fetch actually resolved get a mesh — a failed
+      // fetch just leaves that piece absent rather than crashing the
+      // whole preview.
+      const stlGeometries = new Map(resolved.filter(([, g]) => g !== null) as [string, THREE.BufferGeometry][]);
+      for (const piece of graph.pieces.values()) {
+        const zMm = elevationsMm.get(piece.id) ?? 0;
+        const def = PIECE_DEFS_BY_TYPE[piece.type];
+        const portLevels = def.ports.map((p) => piece.level + (p.level ?? 0));
+        const maxLevel = Math.max(...portLevels);
+        const minLevel = Math.min(...portLevels);
+        const material = maxLevel > 0 ? materials.elevated : minLevel < 0 ? materials.depressed : materials.flat;
+        const group = new THREE.Group();
+        const stlGeometry = stlGeometries.get(piece.type);
+        if (stlGeometry) {
+          group.add(new THREE.Mesh(stlGeometry, material));
+        } else if (!STL_ALIGNMENT[piece.type]) {
+          for (const geometry of getBridgeGeometries(piece.type)) {
+            group.add(new THREE.Mesh(geometry, material));
+          }
+        }
+        group.position.set(piece.transform.x, zMm, -piece.transform.y);
+        group.rotation.y = (piece.transform.rotationDeg * Math.PI) / 180;
+        pieceGroup.add(group);
+      }
+      setLoading(false);
+    });
+
     return () => {
+      cancelled = true;
       cancelAnimationFrame(frameId);
       observer.disconnect();
       controls.dispose();
-      for (const geoms of geometryCache.values()) {
+      for (const geoms of bridgeGeometryCache.values()) {
         for (const g of geoms) g.dispose();
       }
       materials.flat.dispose();
@@ -182,5 +251,9 @@ export default function Canvas3D({ layout }: Canvas3DProps) {
     };
   }, [graph]);
 
-  return <div ref={containerRef} className="canvas3d-container" />;
+  return (
+    <div ref={containerRef} className="canvas3d-container">
+      {loading && <div className="canvas3d-loading-overlay">Loading real piece meshes…</div>}
+    </div>
+  );
 }
