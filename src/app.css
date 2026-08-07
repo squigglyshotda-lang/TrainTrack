@@ -1210,6 +1210,24 @@ button {
   background: color-mix(in srgb, #b3413c 14%, transparent) !important;
 }
 
+/* --- Piece name tag (hover or select a piece to see what it is) --- */
+
+.piece-name-tag {
+  position: fixed;
+  z-index: 11;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 14px var(--shadow);
+}
+
 /* --- Smart Join: pick a source port, only reachable ports light up --- */
 
 .port-join-ring {

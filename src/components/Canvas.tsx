@@ -117,6 +117,11 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   } | null>(null);
   const [drawPreview, setDrawPreview] = useState<Point[] | null>(null);
   const DRAW_THRESHOLD_PX = 10;
+  // Which piece to show a name tag for — the hovered one takes priority,
+  // falling back to the selected one so the name stays visible after a
+  // click even once the pointer moves off (matching what the selection
+  // menu itself already does).
+  const [hoveredPieceId, setHoveredPieceId] = useState<string | null>(null);
 
   const toLocal = (clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -268,6 +273,8 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                   e.stopPropagation();
                   onPieceClick(piece.id);
                 }}
+                onPointerEnter={() => setHoveredPieceId(piece.id)}
+                onPointerLeave={() => setHoveredPieceId(null)}
                 className={levelClass}
                 style={{ cursor: "pointer" }}
               >
@@ -439,6 +446,23 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             />
           );
         })()}
+
+      {(() => {
+        // Hovering a piece names it; once you click one, its name stays
+        // up (via selectedId) even after the pointer moves away, so the
+        // selection menu's target is never a mystery either.
+        const labelPieceId = hoveredPieceId ?? selectedId;
+        if (!labelPieceId) return null;
+        const piece = graph.pieces.get(labelPieceId);
+        if (!piece) return null;
+        const def = PIECE_DEFS_BY_TYPE[piece.type];
+        const anchor = toScreen(piece.transform.x, piece.transform.y);
+        return (
+          <div className="piece-name-tag" style={{ left: anchor.x, top: anchor.y + 22 }}>
+            {def.label}
+          </div>
+        );
+      })()}
     </div>
   );
 });

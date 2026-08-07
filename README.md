@@ -54,6 +54,13 @@ separately.
   Join uses below), so you can check "what could connect here" without
   committing to anything — a lighter, undashed ring than Smart Join's own,
   so it reads as a preview rather than a selection.
+- Hovering or selecting a piece shows its name in a small tag next to it
+  (`45° Curve`, `Y-Turnout`, etc.) — several piece outlines look similar
+  at a glance, especially at low zoom, so this is the fast way to check
+  what something actually is without opening the picker. Hovering always
+  wins over the current selection, and the tag for a selected piece stays
+  up even after the pointer moves away (so it doesn't disappear right
+  when the selection menu appears above it).
 - The canvas background is a real grid, not decoration: dots every 25mm, a
   bolder line every 100mm (one straight piece's length), drawn in world
   units so it pans and zooms with the layout instead of sitting fixed on
