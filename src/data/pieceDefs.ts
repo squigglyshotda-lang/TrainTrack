@@ -208,6 +208,24 @@ function pegCoupler(): PieceDef {
   };
 }
 
+// The far-side ramp of a bridge crossing — see track-spec.json's
+// bridgeSlope entry for why both ends are sockets (not the usual one
+// socket/one peg pattern every other piece here follows).
+function bridgeSlope(): PieceDef {
+  const length = spec.pieces.bridgeSlope.lengthMm.value;
+  const ports: Port[] = [
+    { id: "a", x: 0, y: 0, headingDeg: 180, gender: "socket" },
+    { id: "b", x: length, y: 0, headingDeg: 0, gender: "socket" },
+  ];
+  return {
+    type: "bridgeSlope",
+    label: "Bridge Ramp — Down",
+    shortLabel: "Ramp Down",
+    ports,
+    outlines: [straightOutline(length)],
+  };
+}
+
 // Builds the outline for one "half" of the snake piece's S-curve: a
 // straight run of `extMm`, then an arc of `arcAngleDeg` at `radiusMm`,
 // walked forward from (originPos, originHeadingDeg). Returns the outer and
@@ -349,6 +367,8 @@ export const PIECE_DEFS: PieceDef[] = [
   pegCoupler(),
   snake(false),
   snake(true),
+  straightLike("bridgeGround", "Bridge Ramp — Up", "Ramp Up", spec.pieces.bridgeGround.lengthMm.value),
+  bridgeSlope(),
 ];
 
 // The palette, the piece library, and the root-placement picker only ever

@@ -186,6 +186,25 @@ export class LayoutGraph {
     this.recomputeDescendantTransforms(id);
   }
 
+  // Only a root piece (nothing attached above it) can be freely rotated —
+  // any other piece's transform is derived from its parent attachment, and
+  // spinning it would pull its own connecting port off of that parent's
+  // port, breaking the one thing the port graph guarantees.
+  canRotate(id: string): boolean {
+    return this.pieces.has(id) && !this.attachmentsByChild.has(id);
+  }
+
+  // Rotates a root piece in place by deltaDeg (default a quarter turn) and
+  // cascades the change through everything built on top of it, the same
+  // way flipPiece does.
+  rotatePiece(id: string, deltaDeg = 90): void {
+    const piece = this.pieces.get(id);
+    if (!piece) throw new Error(`Unknown piece ${id}`);
+    if (!this.canRotate(id)) return;
+    piece.transform = { ...piece.transform, rotationDeg: normalizeDeg(piece.transform.rotationDeg + deltaDeg) };
+    this.recomputeDescendantTransforms(id);
+  }
+
   private recomputeDescendantTransforms(parentId: string): void {
     for (const childId of this.childrenOf.get(parentId) ?? []) {
       const att = this.attachmentsByChild.get(childId)!;

@@ -90,6 +90,25 @@
       "arcRadiusMm": { "value": 86, "source": "same example, same file — same radius family as curve45/curve90" },
       "targetLengthMm": { "value": 146, "source": "same example, same file" },
       "derivation_note": "The piece's local port geometry (entry at local origin, exit at (targetLengthMm, sidestepMm)) is computed in pieceDefs.ts directly from these three inputs, following snake_track()'s own formula (scad lines 671-687: h1=sin(angle)*radius, h2=sin(angle)*(radius+trackWidth), hf=tan(angle)*(radius+trackWidth), l1=(radius+trackWidth)-radius*cos(angle), l2=(radius+trackWidth)*(1-cos(angle)), sidestep=l1+l2-trackWidth). Cross-checked against the actual mesh's bounding box (see scratch analysis during development): computed side_ext (11.032mm) matched the mesh's min-Y exactly, computed sidestep (~40.0004mm, deliberately close to one trackWidth) matched the mesh's connector-to-connector X offset exactly."
+    },
+    "bridgeGround": {
+      "_comment": "The ramp piece that starts flush at ground level (socket end) and climbs to the bridge's elevated height (peg end) via a 14deg arc. This app is 2D top-down only (see README's 'what's not here yet' note on elevation), so the piece is modeled as a plain straight-line 2-port piece using its real HORIZONTAL (top-down) span — it doesn't visually rise on the canvas, and nothing here checks whether an elevated piece 'lands' on top of another; the physical rise is real (see bridgeHeightMm below) but isn't simulated.",
+      "arcAngleDeg": { "value": 14, "source": "scad generate_bridge() default bridge_angle=14, scad line 967. Matches pre-generated_parts_stl/brio/train_tracks_brio_bridge_ground_14deg_r100mm_s205mm_p50mm.stl's filename." },
+      "arcRadiusMm": { "value": 100, "source": "scad generate_bridge() default slope_radius=100, scad line 968. Same file." },
+      "lengthMm": { "value": 33.895, "source": "scad generate_bridge()'s own y_off_bg formula (line 974): sin(bridge_angle)*slope_radius + cos(bridge_angle)*slope_straight_plug_length, using slope_straight_plug_length=10 (scad line 80, 'length of the straight ending (without plug)'). This is the exact horizontal offset the generator itself uses to position the next piece against this one's high (plug) end, so it's the real port-to-port horizontal span, not a guess. Cross-checked against the actual mesh: bounding box Y-span is 71.422mm (from -20 to 51.422), consistent with a ~20mm socket-neck overshoot on the low end and a ~17.5mm plug-neck overshoot on the high end bracketing this 33.895mm nominal span." }
+    },
+    "bridgeSlope": {
+      "_comment": "The ramp piece for the far side of a bridge crossing, coming back down to ground level. Unlike every other 2-port piece in this app, BOTH ends are sockets (see scad track_bridge_slope(), lines 1135-1146 and 1154-1172 — both labeled 'nest') — not a mistake, it's how the real part is designed, and this app's existing gender-matching (already used for the Y-turnout and the two peg-peg connectors) handles it with no special-casing.",
+      "arcAngleDeg": { "value": 14, "source": "same as bridgeGround — same generate_bridge() call, same file family" },
+      "arcRadiusMm": { "value": 100, "source": "same as bridgeGround" },
+      "lengthMm": { "value": 43.598, "source": "scad generate_bridge()'s own y_off_sl formula (line 975): sin(bridge_angle)*slope_radius + cos(bridge_angle)*slope_straight_nest_length, using slope_straight_nest_length=20 (scad line 79). Cross-checked against the mesh: bounding box Y-span is 87.242mm, consistent with a ~20mm socket-neck overshoot on BOTH ends (this piece uses the longer 'nest' neck length at both ends, unlike bridgeGround) bracketing this 43.598mm nominal span." }
+    },
+    "bridgeHeightMm": {
+      "value": 62.8,
+      "source": "scad generate_bridge()'s own bridge_height formula (lines 1008-1012), evaluated with the default straight_part_l=205mm deck length: 2*(radius-radius*cos(angle)) + sin(angle)*(straight_part_l + slope_straight_nest_length + slope_straight_plug_length) = 62.79mm. Not a piece dimension — informational only, so a real ordinary straight piece (recommended: pieces.straight, 100mm) used as the tilted deck between a bridgeGround and a bridgeSlope reaches roughly this height. Changes if a different straight piece is used as the deck."
+    },
+    "bridgePillar": {
+      "_comment": "A real piece in the source repo (pre-generated_parts_stl/brio/train_tracks_brio_bridge_pillar_14deg_r100mm_s205mm_p50mm.stl) that this app deliberately does NOT add as an interactive piece: it's a perpendicular support prop, not something a train travels through, so it has no inline connector ports the way every other piece here does — there's nothing for the port-graph model to attach it BY. It's mentioned here so the STL isn't silently lost: print pillars separately, sized to bridgeHeightMm above, wherever an elevated section needs support."
     }
   },
 

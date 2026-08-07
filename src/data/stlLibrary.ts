@@ -202,4 +202,30 @@ export const STL_LIBRARY: Record<string, StlLibraryEntry> = {
     heightMm: 12.0,
     solidVolumeMm3: 49124.2,
   },
+  bridgeGround: {
+    type: "bridgeGround",
+    fileName: "bridge-ramp-up.stl",
+    exportBaseName: "bridge-ramp-up-14deg-r100mm",
+    source:
+      "pre-generated_parts_stl/brio/train_tracks_brio_bridge_ground_14deg_r100mm_s205mm_p50mm.stl, used " +
+      "unmodified. heightMm here is the piece's own real physical rise (it's not a flat 12mm piece like " +
+      "everything else in this library) — see track-spec.json's bridgeGround entry for the top-down 2D " +
+      "length this app actually places it with.",
+    footprintXMm: 40.0,
+    footprintYMm: 71.422,
+    heightMm: 21.267,
+    solidVolumeMm3: 24437.4,
+  },
+  bridgeSlope: {
+    type: "bridgeSlope",
+    fileName: "bridge-ramp-down.stl",
+    exportBaseName: "bridge-ramp-down-14deg-r100mm",
+    source:
+      "pre-generated_parts_stl/brio/train_tracks_brio_bridge_slope_14deg_r100mm_s205mm_p50mm.stl, used " +
+      "unmodified. Tallest piece in the library by design — it's the piece at the peak of the bridge.",
+    footprintXMm: 40.0,
+    footprintYMm: 87.242,
+    heightMm: 74.793,
+    solidVolumeMm3: 77064.4,
+  },
 };

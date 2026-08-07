@@ -7,9 +7,12 @@ pieces as 3D-printable STL files.
 ## Status
 
 Phases 1, 2a, and 3 are complete. Phase 4 is partial: PDF export and
-shareable links are done; elevation (ramps/bridges/piers) is not — see
-below for why. Phase 2b (live OpenSCAD-in-the-browser generation) hasn't
-been attempted; Phase 2a already covers every piece type in the app.
+shareable links are done; true elevation (a 3D-aware port model, height in
+the closure math, a side or isometric view) is not — see below for why.
+Bridge ramp pieces exist and are placeable, but as a deliberate
+simplification, not full elevation support. Phase 2b (live
+OpenSCAD-in-the-browser generation) hasn't been attempted; Phase 2a
+already covers every piece type in the app.
 
 ## How the layout works
 
@@ -28,15 +31,21 @@ separately.
   mirrors are reached via Flip instead of being separate entries.
 - Click a placed piece to select it — a contextual menu appears with
   **Flip** (mirrors the piece in place, only shown for pieces that have a
-  genuinely different mirror image), **Replace** (swaps it for a different
-  piece, keeping the same attachment point), and **Delete**. The Delete
-  and Backspace keys also delete whatever's selected. Deleting the root
-  piece (or any piece with nothing attached above it) doesn't take the
-  rest of the layout with it — whatever was built on top becomes its own
-  independent root, at exactly the position it already had. Deleting a
+  genuinely different mirror image), **Rotate** (a quarter turn, only shown
+  for a root piece — nothing attached above it — since any other piece's
+  orientation is derived from its parent attachment and freely spinning it
+  would pull it off that connection), **Replace** (swaps it for a
+  different piece, keeping the same attachment point), and **Delete**. The
+  Delete and Backspace keys also delete whatever's selected. Deleting the
+  root piece (or any piece with nothing attached above it) doesn't take
+  the rest of the layout with it — whatever was built on top becomes its
+  own independent root, at exactly the position it already had. Deleting a
   piece that's attached to something else still takes everything
   downstream of it, since those pieces' positions only make sense relative
   to it.
+- **Clear Canvas** (toolbar) deletes the whole layout after confirming —
+  the same reset a fresh page load would give you, without needing to
+  reload.
 - Free ports are colored circles (solid = peg, ring = socket); occupied
   ports fade to small gray dots. Hovering a free port lights up every other
   free port it could actually reach (the same reachability check Smart
@@ -68,7 +77,10 @@ separately.
   work are filtered out before you can click them rather than after. Two
   peg ends are never reachable — no piece here bridges two pegs (same as
   real BRIO connectors); two socket ends are bridged with a dogbone or peg
-  coupler automatically when needed.
+  coupler automatically when needed. You can also jump straight into it
+  from the ordinary attach picker (the popup a free port normally opens) —
+  a "⚡ Or Smart Join from here" option uses that same port as the source,
+  instead of cancelling out to the toolbar and re-clicking the port.
 - **Draw a shape** — drag from a free port instead of clicking it (a dashed
   preview line follows your cursor), and on release the app fits a
   sequence of pieces to the path you drew, greedily matching whichever
@@ -112,16 +124,16 @@ where it came from. Nothing is guessed — see that file's `_meta` block for
 sourcing notes, including which values are real measurements versus the
 handful that are project-chosen constants (tolerances, bed size).
 
-`src/data/pieceDefs.ts` turns those numbers into all sixteen piece types
+`src/data/pieceDefs.ts` turns those numbers into all eighteen piece types
 (ports + outline shapes): straight, half straight, short straight, 45°
 and 90° curves (each with an opposite-hand version), a Y-turnout, a
 curve+straight turnout (with an opposite-hand version), a 4-way crossing,
 a snake curve (each with an opposite-hand version — see below), a crossing
-with a short spur instead of a second full crossing arm, and two
-peg-at-both-ends connectors, the dogbone and the shorter peg coupler
-(join two socket-ended pieces facing each other — the one case no ordinary
-piece can handle, since every ordinary piece has exactly one peg and one
-socket). The connectors and mirror-image pieces are hidden from the
+with a short spur instead of a second full crossing arm, two bridge ramp
+pieces (see below), and two peg-at-both-ends connectors, the dogbone and
+the shorter peg coupler (join two socket-ended pieces facing each other —
+the one case no ordinary piece can handle, since every ordinary piece has
+exactly one peg and one socket). The connectors and mirror-image pieces are hidden from the
 palette and the root-placement picker — mirrors are reached via Flip
 instead of being separate entries, and the connectors are specialist
 accessories most layouts don't need up front — but the connectors still
@@ -138,6 +150,35 @@ that bring the track back to running parallel to where it started, just
 offset sideways — a lateral jog with zero net heading change, unlike every
 other curve in the set. Useful for nudging a line sideways without
 actually turning it.
+
+**Bridge Ramp — Up / Down.** These are real, sourced pieces (torwan's
+`generate_bridge()`, 14° angle, 100mm radius) that physically climb from
+ground level to an elevated height and back down. This app is 2D
+top-down only (see "what's not here yet" below), so they're placed as
+plain straight-line pieces using their real *horizontal* span — the
+canvas doesn't show them rising, and nothing checks whether an elevated
+piece actually clears whatever it's meant to cross. That's the deliberate
+simplification behind adding them now instead of waiting for full
+elevation support: the pieces are real and useful for building and
+exporting a bridge crossing, the canvas just won't picture the "up and
+over" part. To build a full crossing: Ramp Up (ground → peak, socket →
+peg) → an ordinary straight piece as the tilted deck (any length; 100mm
+lands the crossing at roughly 63mm of clearance, per
+`track-spec.json`'s `bridgeHeightMm`) → Ramp Down (peak → ground). Ramp
+Down is unusual among this app's pieces: *both* its ports are sockets
+(matching the real part), not the usual one-socket-one-peg pattern — so
+both connecting it to the deck and continuing past its far end need a
+peg-offering piece, same as anywhere else two sockets meet.
+
+The source repo also has a real bridge pillar STL
+(`bridge_pillar_14deg_r100mm_s205mm_p50mm.stl`) that this app deliberately
+does *not* add as a placeable piece: it's a perpendicular support prop, not
+something a train travels through, so it has no inline connector ports —
+there's nothing for the port-graph model to attach it by. Print pillars
+separately, sized to the bridge height above, wherever an elevated section
+needs support. There is no tunnel piece in torwan's generator at all — one
+isn't included here either, since inventing dimensions for it would break
+every other piece's "nothing here is guessed" guarantee.
 
 **Why the peg coupler exists alongside the dogbone:** every ordinary piece
 has one peg and one socket, and that pairing is gender-invariant through
@@ -168,14 +209,20 @@ UI at all.
 
 ## What's not here yet, and why
 
-**Elevation (ramps, bridges, piers).** The source repo has real dimensions
-and STL files for bridge pieces, so the data isn't the blocker. The
-blocker is that every port right now is purely 2D (x, y, heading) — a
-bridge piece needs its ports to also carry a height and a grade, which
-touches the port model, the closure-detection math, and how (or whether)
-a top-down 2D view shows height at all. That's a real design decision, not
-a piece-type addition, so it's being left for a focused follow-up instead
-of a rushed bolt-on.
+**True elevation (a height-aware port model, an "up and over" view).** The
+bridge ramp pieces exist now (see above) and are placeable, but every port
+in this app is still purely 2D (x, y, heading) — the ramps are modeled by
+their real horizontal footprint, not by actually rising on screen. A piece
+whose ports also carry a height and a grade — so the canvas could show a
+bridge crossing over another track, and closure detection could tell an
+elevated dead-end from a ground-level one — touches the port model, the
+closure-detection math, and how (or whether) a top-down 2D view shows
+height at all. That's a real design decision, not a piece-type addition,
+so it's still being left for a focused follow-up rather than a rushed
+bolt-on. **Tunnels:** there's no tunnel module or pre-generated tunnel STL
+anywhere in torwan's generator repo, so none is offered here either —
+adding one would mean inventing dimensions, which breaks the one rule
+every other piece in this app follows.
 
 **Phase 2b (live OpenSCAD-in-the-browser generation).** Not attempted.
 Phase 2a's static library already covers every piece type in the app, so

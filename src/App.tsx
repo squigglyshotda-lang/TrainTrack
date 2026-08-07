@@ -148,6 +148,20 @@ export default function App() {
     );
   };
 
+  // Lets a user jump straight from the attach picker into Smart Join,
+  // using the same port the picker was opened for as the source — instead
+  // of cancelling, going to the toolbar, and re-clicking the same port.
+  const handleSmartJoinFromPending = () => {
+    if (!pending?.target) return;
+    const info = graph
+      .freePorts()
+      .find((fp) => fp.pieceId === pending.target!.pieceId && fp.port.id === pending.target!.portId);
+    setPending(null);
+    if (!info) return;
+    setJoinMode(true);
+    selectJoinSource(info);
+  };
+
   // Completes a join onto a port already confirmed reachable from the
   // current source — re-runs the same search (the graph can't have changed
   // in between) to get the exact piece sequence, then places it for real.
@@ -241,6 +255,19 @@ export default function App() {
     setHistory({ entries: [newGraph.serialize()], index: 0 });
   };
 
+  const handleClearCanvas = () => {
+    if (graph.isEmpty()) return;
+    if (!window.confirm("This clears your whole layout. Continue?")) return;
+    const newGraph = new LayoutGraph();
+    graphRef.current = newGraph;
+    setSelectedId(null);
+    setJoinMode(false);
+    clearJoinSelection();
+    setPending(null);
+    setBannerError(null);
+    setHistory({ entries: [newGraph.serialize()], index: 0 });
+  };
+
   const handleDeleteLast = () => {
     graph.deleteLast();
     setSelectedId(null);
@@ -257,6 +284,11 @@ export default function App() {
 
   const handleFlipSelected = (pieceId: string) => {
     graph.flipPiece(pieceId);
+    commit();
+  };
+
+  const handleRotateSelected = (pieceId: string) => {
+    graph.rotatePiece(pieceId);
     commit();
   };
 
@@ -448,6 +480,8 @@ export default function App() {
         onToggleJoinMode={handleToggleJoinMode}
         canFitView={!graph.isEmpty()}
         onFitView={() => canvasRef.current?.fitToView()}
+        canClear={!graph.isEmpty()}
+        onClear={handleClearCanvas}
       />
       <input
         ref={fileInputRef}
@@ -485,6 +519,7 @@ export default function App() {
           hoverReachableKeys={hoverReachableKeys}
           closures={closures}
           onFlipSelected={handleFlipSelected}
+          onRotateSelected={handleRotateSelected}
           onReplaceSelected={handleReplaceSelected}
           onDeleteSelected={handleDeleteSelected}
         />
@@ -505,6 +540,7 @@ export default function App() {
           requiredGender={pending.target ? opposite(pending.target.gender) : undefined}
           onChoose={handleChoose}
           onCancel={() => setPending(null)}
+          onSmartJoin={pending.target ? handleSmartJoinFromPending : undefined}
         />
       )}
     </div>

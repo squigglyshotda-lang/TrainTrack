@@ -21,6 +21,8 @@ interface ToolbarProps {
   onToggleJoinMode: () => void;
   canFitView: boolean;
   onFitView: () => void;
+  canClear: boolean;
+  onClear: () => void;
 }
 
 export default function Toolbar({
@@ -46,6 +48,8 @@ export default function Toolbar({
   onToggleJoinMode,
   canFitView,
   onFitView,
+  canClear,
+  onClear,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
@@ -66,6 +70,9 @@ export default function Toolbar({
         </button>
         <button disabled={!canDeleteLast} onClick={onDeleteLast}>
           Delete Last Piece
+        </button>
+        <button disabled={!canClear} onClick={onClear} title="Delete the whole layout and start over">
+          Clear Canvas
         </button>
         <span className="toolbar-divider" aria-hidden="true" />
         <button disabled={!canFitView} onClick={onFitView} title="Frame the whole layout in view">

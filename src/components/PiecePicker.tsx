@@ -11,13 +11,24 @@ interface PiecePickerProps {
   requiredGender?: Gender;
   onChoose: (type: string, portId: string) => void;
   onCancel: () => void;
+  // Jumps straight into Smart Join using the port this picker was opened
+  // for as the source, instead of attaching one specific piece. Only
+  // meaningful when there's an actual port involved (requiredGender set) —
+  // undefined when placing the very first piece.
+  onSmartJoin?: () => void;
 }
 
 function compatiblePorts(ports: Port[], requiredGender?: Gender): Port[] {
   return requiredGender ? ports.filter((p) => p.gender === requiredGender) : ports;
 }
 
-export default function PiecePicker({ screenPos, requiredGender, onChoose, onCancel }: PiecePickerProps) {
+export default function PiecePicker({
+  screenPos,
+  requiredGender,
+  onChoose,
+  onCancel,
+  onSmartJoin,
+}: PiecePickerProps) {
   const [pendingType, setPendingType] = useState<string | null>(null);
 
   // Placing the very first piece (no target to match) only offers the
@@ -60,6 +71,11 @@ export default function PiecePicker({ screenPos, requiredGender, onChoose, onCan
           ×
         </button>
       </div>
+      {onSmartJoin && (
+        <button className="piece-picker-smart-join" onClick={onSmartJoin}>
+          ⚡ Or Smart Join from here — light up every port this one can reach
+        </button>
+      )}
       <div className="piece-picker-grid">
         {options.map((def) => {
           const ports = compatiblePorts(def.ports, requiredGender);

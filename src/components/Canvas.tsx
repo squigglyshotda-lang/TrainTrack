@@ -21,6 +21,7 @@ interface CanvasProps {
   selectedId: string | null;
   closures: ClosurePair[];
   onFlipSelected: (pieceId: string) => void;
+  onRotateSelected: (pieceId: string) => void;
   onReplaceSelected: (pieceId: string, screenPos: { x: number; y: number }) => void;
   onDeleteSelected: () => void;
   // Smart Join: while active, a port click doesn't open the attach picker —
@@ -86,6 +87,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     selectedId,
     closures,
     onFlipSelected,
+    onRotateSelected,
     onReplaceSelected,
     onDeleteSelected,
     joinMode,
@@ -391,6 +393,8 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               screenPos={{ x: anchor.x, y: anchor.y - 44 }}
               canFlip={!!MIRROR_PARTNER[piece.type]}
               onFlip={() => onFlipSelected(selectedId)}
+              canRotate={graph.canRotate(selectedId)}
+              onRotate={() => onRotateSelected(selectedId)}
               onReplace={() => onReplaceSelected(selectedId, anchor)}
               onDelete={onDeleteSelected}
             />
