@@ -7,11 +7,12 @@ pieces as 3D-printable STL files.
 ## Status
 
 Phases 1, 2a, and 3 are complete. Phase 4 is partial: PDF export and
-shareable links are done; *continuous* elevation (real mm height, a
-side/isometric view) is not — see below for why. Bridge ramp pieces exist
-and are placeable, ports carry a discrete height level, closure detection
-respects it, and elevated pieces are visually distinct on the canvas —
-deliberately a step count rather than true physical height (see "Levels").
+shareable links are done. Bridge ramp pieces exist and are placeable,
+ports carry a discrete height level, closure detection respects it, and
+elevated pieces are visually distinct on the canvas — deliberately a step
+count rather than true physical height (see "Levels"). A 3D preview is
+also available now (toggle it from the toolbar; 2D is still the default
+view) — see "3D preview" below for what it does and doesn't show.
 Phase 2b (live OpenSCAD-in-the-browser generation) hasn't been attempted;
 Phase 2a already covers every piece type in the app.
 
@@ -197,6 +198,25 @@ Pieces also draw in level order (lowest first), so where two do overlap,
 the higher one visually sits on top, matching which one would really be
 on top.
 
+**3D preview.** The toolbar's 3D View toggle switches from the flat plan
+to an orbitable 3D scene (2D stays the default on load; the 3D view — and
+the `three` library it needs — only loads once you switch to it). It's a
+schematic preview, not a render of the real printed geometry: each piece
+is built by extruding its existing 2D outline (the same polygons the
+canvas and PDF export already draw) up to the track's real 12mm
+thickness, rather than loading the actual STL mesh for each piece type.
+That trade was deliberate — the STL files use inconsistent internal axis
+conventions from one piece family to the next, so aligning eighteen-odd
+real meshes precisely against the port model would be hard to get right
+and harder to verify, where extruding the outline guarantees every port
+lines up by construction. The two bridge ramps are the exception that
+actually tilts: each one's real rise in mm is computed from its own
+sourced length and the source's 14° bridge angle (`riseMm = lengthMm *
+tan(angleDeg)`, kept as `Port.riseMm` — a separate, continuous-mm field
+from the discrete `level` used everywhere else) and applied as a genuine
+geometric tilt on that piece's mesh. Every other piece stays flat, since
+nothing else in the port model carries a grade for it to tilt with.
+
 The source repo also has a real bridge pillar STL
 (`bridge_pillar_14deg_r100mm_s205mm_p50mm.stl`) that this app deliberately
 does *not* add as a placeable piece: it's a perpendicular support prop, not
@@ -236,15 +256,17 @@ UI at all.
 
 ## What's not here yet, and why
 
-**Continuous height / a true "up and over" view.** Ports now carry a
-discrete level (see "Levels" above) — that's enough to make elevation
-visible and to keep closure detection honest, which was the actual gap
-being asked for. What's still not here is *physical* height: a real mm
-grade, a piece that visibly rises on the canvas, or a side/isometric view
-that would let you eyeball real-world clearance instead of reading a
-level number. That needs pieces (or attachments) to carry a grade/slope,
-not just a step count, which is a bigger port-model change than this
-project has taken on. **Tunnels:** there's no tunnel module or
+**Continuous height on the 2D plan.** Ports carry a discrete level (see
+"Levels" above), which is enough to make elevation visible on the flat
+canvas and to keep closure detection honest — that was the actual gap
+being asked for there. The 2D canvas itself still has no notion of
+physical mm height or grade; it reads level numbers and dashed styling,
+not a rising line. The 3D preview (see "3D preview" above) covers the
+"can I actually picture this in 3D" need instead, but it's schematic —
+extruded outlines with the two ramp pieces' real tilt applied, not a
+render of the real printed STL geometry, and every other piece stays
+perfectly flat since nothing else in the port model carries a grade.
+**Tunnels:** there's no tunnel module or
 pre-generated tunnel STL anywhere in torwan's generator repo, so none is
 offered here either — adding one would mean inventing dimensions, which
 breaks the one rule

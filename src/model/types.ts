@@ -14,6 +14,15 @@ export interface Port {
   // discrete "one ramp up/down" steps rather than claiming a physical mm
   // height this app doesn't actually know.
   level?: number;
+  // Real physical rise in mm, LOCAL to the piece (0 if omitted) — used only
+  // by the 3D preview, kept deliberately separate from `level` above. Only
+  // the two bridge ramp ports have a non-zero value here, computed from
+  // their own sourced horizontal length and the real 14deg bridge angle
+  // (riseMm = lengthMm * tan(angleDeg)) — see track-spec.json. This is
+  // real, derived geometry, not the same simplification `level` makes; the
+  // 3D view uses it to actually tilt a ramp piece's mesh, while `level`
+  // stays a step count for the 2D badges and closure detection.
+  riseMm?: number;
 }
 
 export interface PieceDef {

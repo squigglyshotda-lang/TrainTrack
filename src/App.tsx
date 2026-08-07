@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import Canvas from "./components/Canvas";
 import type { CanvasHandle } from "./components/Canvas";
 import PiecePicker from "./components/PiecePicker";
@@ -19,6 +19,10 @@ import { findJoinPath, findReachablePortKeys, placeJoinPath } from "./model/auto
 import { fitDrawnPath } from "./model/drawFit";
 import type { Point } from "./model/geometry";
 import "./app.css";
+
+// Three.js is a meaningful chunk of bundle weight, so the 3D view is only
+// fetched once a user actually opts into it (2D stays the default view).
+const Canvas3D = lazy(() => import("./components/Canvas3D"));
 
 interface SelectedPort {
   pieceId: string;
@@ -77,6 +81,10 @@ export default function App() {
   const [inventory, setInventory] = useState<Record<string, number>>({});
   const [filamentCostPerKg, setFilamentCostPerKg] = useState(0);
   const [shareStatus, setShareStatus] = useState<"idle" | "copied">("idle");
+  // 2D is always what a new session sees; 3D is an opt-in preview a user
+  // switches to only when they want it (also why Canvas3D/three is lazy-
+  // loaded below, instead of shipping in the main bundle unconditionally).
+  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
   // Smart Join: joinMode is the toolbar toggle; joinSource is the free port
   // picked as the start once it's on; reachableKeys is recomputed fresh
   // every time a source is picked, so it's always accurate to the graph as
@@ -212,6 +220,10 @@ export default function App() {
       screenPos,
       target: { pieceId: info.pieceId, portId: info.port.id, gender: info.port.gender },
     });
+  };
+
+  const handleToggleViewMode = () => {
+    setViewMode((prev) => (prev === "2d" ? "3d" : "2d"));
   };
 
   const handleToggleJoinMode = () => {
@@ -482,6 +494,8 @@ export default function App() {
         onFitView={() => canvasRef.current?.fitToView()}
         canClear={!graph.isEmpty()}
         onClear={handleClearCanvas}
+        viewMode={viewMode}
+        onToggleViewMode={handleToggleViewMode}
       />
       <input
         ref={fileInputRef}
@@ -503,26 +517,32 @@ export default function App() {
           <TemplatesPanel onUseTemplate={handleUseTemplate} />
           <Palette isEmpty={graph.isEmpty()} onSelectRoot={handlePaletteSelectRoot} />
         </div>
-        <Canvas
-          ref={canvasRef}
-          graph={graph}
-          onPortClick={handlePortClick}
-          onDrawPathComplete={handleDrawPathComplete}
-          onPieceClick={handlePieceClick}
-          onEmptyCanvasClick={handleEmptyCanvasClick}
-          selectedId={selectedId}
-          joinMode={joinMode}
-          joinSourceKey={joinSourceKey}
-          reachableKeys={reachableKeys}
-          onPortHoverStart={handlePortHoverStart}
-          onPortHoverEnd={handlePortHoverEnd}
-          hoverReachableKeys={hoverReachableKeys}
-          closures={closures}
-          onFlipSelected={handleFlipSelected}
-          onRotateSelected={handleRotateSelected}
-          onReplaceSelected={handleReplaceSelected}
-          onDeleteSelected={handleDeleteSelected}
-        />
+        {viewMode === "2d" ? (
+          <Canvas
+            ref={canvasRef}
+            graph={graph}
+            onPortClick={handlePortClick}
+            onDrawPathComplete={handleDrawPathComplete}
+            onPieceClick={handlePieceClick}
+            onEmptyCanvasClick={handleEmptyCanvasClick}
+            selectedId={selectedId}
+            joinMode={joinMode}
+            joinSourceKey={joinSourceKey}
+            reachableKeys={reachableKeys}
+            onPortHoverStart={handlePortHoverStart}
+            onPortHoverEnd={handlePortHoverEnd}
+            hoverReachableKeys={hoverReachableKeys}
+            closures={closures}
+            onFlipSelected={handleFlipSelected}
+            onRotateSelected={handleRotateSelected}
+            onReplaceSelected={handleReplaceSelected}
+            onDeleteSelected={handleDeleteSelected}
+          />
+        ) : (
+          <Suspense fallback={<div className="canvas3d-loading">Loading 3D preview…</div>}>
+            <Canvas3D layout={history.entries[history.index]} />
+          </Suspense>
+        )}
         <div className="sidebar">
           <BOMPanel
             graph={graph}

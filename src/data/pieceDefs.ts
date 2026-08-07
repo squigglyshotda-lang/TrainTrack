@@ -213,9 +213,13 @@ function pegCoupler(): PieceDef {
 // change comes from.
 function bridgeGround(): PieceDef {
   const length = spec.pieces.bridgeGround.lengthMm.value;
+  // Real rise, not a display guess: this piece's own horizontal span times
+  // the real sourced bridge angle (see Port.riseMm's comment). Used only by
+  // the 3D preview to actually tilt the mesh.
+  const riseMm = length * Math.tan((spec.pieces.bridgeGround.arcAngleDeg.value * Math.PI) / 180);
   const ports: Port[] = [
-    { id: "a", x: 0, y: 0, headingDeg: 180, gender: "socket", level: 0 },
-    { id: "b", x: length, y: 0, headingDeg: 0, gender: "peg", level: 1 },
+    { id: "a", x: 0, y: 0, headingDeg: 180, gender: "socket", level: 0, riseMm: 0 },
+    { id: "b", x: length, y: 0, headingDeg: 0, gender: "peg", level: 1, riseMm },
   ];
   return {
     type: "bridgeGround",
@@ -231,9 +235,10 @@ function bridgeGround(): PieceDef {
 // socket/one peg pattern every other piece here follows).
 function bridgeSlope(): PieceDef {
   const length = spec.pieces.bridgeSlope.lengthMm.value;
+  const riseMm = length * Math.tan((spec.pieces.bridgeSlope.arcAngleDeg.value * Math.PI) / 180);
   const ports: Port[] = [
-    { id: "a", x: 0, y: 0, headingDeg: 180, gender: "socket", level: 0 },
-    { id: "b", x: length, y: 0, headingDeg: 0, gender: "socket", level: -1 },
+    { id: "a", x: 0, y: 0, headingDeg: 180, gender: "socket", level: 0, riseMm: 0 },
+    { id: "b", x: length, y: 0, headingDeg: 0, gender: "socket", level: -1, riseMm: -riseMm },
   ];
   return {
     type: "bridgeSlope",

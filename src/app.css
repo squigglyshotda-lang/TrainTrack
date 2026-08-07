@@ -358,6 +358,28 @@ button {
   touch-action: none;
 }
 
+.canvas3d-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.canvas3d-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.canvas3d-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  background: var(--bg);
+}
+
 /* Real-world-scale grid, drawn in world units so it pans/zooms with the
    layout instead of sitting fixed on screen — see Canvas.tsx's grid-minor /
    grid-major patterns. */

@@ -23,6 +23,8 @@ interface ToolbarProps {
   onFitView: () => void;
   canClear: boolean;
   onClear: () => void;
+  viewMode: "2d" | "3d";
+  onToggleViewMode: () => void;
 }
 
 export default function Toolbar({
@@ -50,6 +52,8 @@ export default function Toolbar({
   onFitView,
   canClear,
   onClear,
+  viewMode,
+  onToggleViewMode,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
@@ -77,6 +81,13 @@ export default function Toolbar({
         <span className="toolbar-divider" aria-hidden="true" />
         <button disabled={!canFitView} onClick={onFitView} title="Frame the whole layout in view">
           ⊡ Fit View
+        </button>
+        <button
+          onClick={onToggleViewMode}
+          className={viewMode === "3d" ? "toolbar-join-active" : undefined}
+          title="Switch between the flat 2D plan and a 3D preview"
+        >
+          {viewMode === "3d" ? "◧ 2D View" : "◨ 3D View"}
         </button>
         <span className="toolbar-divider" aria-hidden="true" />
         <button
