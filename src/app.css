@@ -836,21 +836,16 @@ button {
   color: var(--pastel-6-ink);
 }
 
-/* --- Templates panel --- */
+/* --- Templates: the left-panel button that opens the modal --- */
 
-.templates-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.template-card {
+.templates-open-button {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
+  gap: 2px;
+  width: 100%;
   text-align: left;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1.5px solid var(--line);
   border-radius: 14px;
   background: var(--surface);
@@ -858,9 +853,51 @@ button {
   transition: border-color 0.12s ease, transform 0.08s ease;
 }
 
-.template-card:hover {
+.templates-open-button:hover {
   border-color: var(--accent);
   transform: translateY(-1px);
+}
+
+.templates-open-button-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.templates-open-button-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* --- Templates modal --- */
+
+.templates-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.template-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  text-align: left;
+  padding: 10px 12px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+}
+
+.template-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px var(--shadow);
 }
 
 .template-card-name {
@@ -874,6 +911,85 @@ button {
   font-size: 11.5px;
   line-height: 1.4;
   color: var(--muted);
+}
+
+.template-preview {
+  display: block;
+  width: 100%;
+  height: 120px;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.template-preview-outline {
+  fill: var(--bg);
+  stroke: var(--ink);
+  stroke-width: 3;
+  opacity: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+
+/* --- Generic modal shell (currently just the templates modal) --- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 16, 10, 0.45);
+  padding: 24px;
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  max-width: 900px;
+  max-height: 85vh;
+  width: 100%;
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px var(--shadow);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.modal-close {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  padding: 4px 8px;
+  color: var(--muted);
+  border-radius: 8px;
+}
+
+.modal-close:hover {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+@media (max-width: 720px) {
+  .templates-modal-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* --- Piece picker popover (click a free port) --- */

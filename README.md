@@ -62,10 +62,18 @@ separately.
   (toolbar) reframes the whole layout — handy after panning away, or after
   a root delete leaves pieces sitting far from wherever the view happens
   to be centered.
-- "Start from a Template" loads a pre-built, pre-verified loop (built and
-  closure-checked with the actual graph engine, not hand-derived): a tight
-  circle, a stadium oval, an oval with a siding, a switch yard, or a
-  figure-8.
+- "Start from a Template" opens a modal with all 10 starter layouts, each
+  built and closure-checked with the actual graph engine (not
+  hand-derived) and shown with a real preview — not a separately authored
+  image, but the template's own `LayoutGraph` replayed and its actual
+  piece outlines drawn to scale, so the preview can't drift out of sync
+  with what choosing the card actually places. Covers two plain loops (a
+  tight curve45 circle and an even tighter 4-piece curve90 loop), a
+  stadium oval, a figure-8, and six variants of that same oval with a
+  different dead-end hanging off it — a 4-way crossing siding, a
+  Y-turnout switch yard, a bare crossing-spur halt, a snake-curve siding,
+  a curve+straight switch fork, and a bridge ramp overpass that climbs to
+  level 1 and back down.
 - **⚡ Smart Join** (toolbar button) — click it, then click a free port:
   the app searches every other free port for whether a piece combination
   can actually reach it (same search as below) and only those light up

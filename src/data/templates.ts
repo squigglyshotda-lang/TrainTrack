@@ -140,4 +140,124 @@ export const TEMPLATES: Template[] = [
       ],
     },
   },
+  {
+    id: "quad-loop",
+    name: "Tight Quad Loop",
+    description: "Just four 90° curves — the smallest loop this piece set can close, and the fewest pieces of any template here.",
+    layout: {
+      version: 1,
+      actions: [
+        { id: "piece1", type: "curve90" },
+        { id: "piece2", type: "curve90", parent: { pieceId: "piece1", portId: "b" }, childPortId: "a" },
+        { id: "piece3", type: "curve90", parent: { pieceId: "piece2", portId: "b" }, childPortId: "a" },
+        { id: "piece4", type: "curve90", parent: { pieceId: "piece3", portId: "b" }, childPortId: "a" },
+      ],
+    },
+  },
+  {
+    id: "crossing-spur-halt",
+    name: "Crossing Spur Halt",
+    description:
+      "The oval racetrack again, but its lead straight is a 4-Way Crossing (Short Spur) instead — same " +
+      "through-axis geometry as a straight, so the loop still closes exactly, and its own short cross-arm " +
+      "is a ready-made dead-end halt with no extra piece needed.",
+    layout: {
+      version: 1,
+      actions: [
+        { id: "piece1", type: "straight" },
+        { id: "piece2", type: "crossing4Spur", parent: { pieceId: "piece1", portId: "b" }, childPortId: "a1" },
+        { id: "piece3", type: "curve45", parent: { pieceId: "piece2", portId: "a2" }, childPortId: "a" },
+        { id: "piece4", type: "curve45", parent: { pieceId: "piece3", portId: "b" }, childPortId: "a" },
+        { id: "piece5", type: "curve45", parent: { pieceId: "piece4", portId: "b" }, childPortId: "a" },
+        { id: "piece6", type: "curve45", parent: { pieceId: "piece5", portId: "b" }, childPortId: "a" },
+        { id: "piece7", type: "straight", parent: { pieceId: "piece6", portId: "b" }, childPortId: "a" },
+        { id: "piece8", type: "straight", parent: { pieceId: "piece7", portId: "b" }, childPortId: "a" },
+        { id: "piece9", type: "curve45", parent: { pieceId: "piece8", portId: "b" }, childPortId: "a" },
+        { id: "piece10", type: "curve45", parent: { pieceId: "piece9", portId: "b" }, childPortId: "a" },
+        { id: "piece11", type: "curve45", parent: { pieceId: "piece10", portId: "b" }, childPortId: "a" },
+        { id: "piece12", type: "curve45", parent: { pieceId: "piece11", portId: "b" }, childPortId: "a" },
+      ],
+    },
+  },
+  {
+    id: "snake-siding",
+    name: "Snake Siding",
+    description:
+      "The oval with a siding again, but the siding ends in a Snake Curve instead of a dead straight — " +
+      "the same S-shaped sidestep piece, parked where you can see its lateral jog without it having to " +
+      "fit back into a closed loop.",
+    layout: {
+      version: 1,
+      actions: [
+        { id: "piece1", type: "straight" },
+        { id: "piece2", type: "crossing4", parent: { pieceId: "piece1", portId: "b" }, childPortId: "a1" },
+        { id: "piece3", type: "curve45", parent: { pieceId: "piece2", portId: "a2" }, childPortId: "a" },
+        { id: "piece4", type: "curve45", parent: { pieceId: "piece3", portId: "b" }, childPortId: "a" },
+        { id: "piece5", type: "curve45", parent: { pieceId: "piece4", portId: "b" }, childPortId: "a" },
+        { id: "piece6", type: "curve45", parent: { pieceId: "piece5", portId: "b" }, childPortId: "a" },
+        { id: "piece7", type: "straight", parent: { pieceId: "piece6", portId: "b" }, childPortId: "a" },
+        { id: "piece8", type: "straight", parent: { pieceId: "piece7", portId: "b" }, childPortId: "a" },
+        { id: "piece9", type: "curve45", parent: { pieceId: "piece8", portId: "b" }, childPortId: "a" },
+        { id: "piece10", type: "curve45", parent: { pieceId: "piece9", portId: "b" }, childPortId: "a" },
+        { id: "piece11", type: "curve45", parent: { pieceId: "piece10", portId: "b" }, childPortId: "a" },
+        { id: "piece12", type: "curve45", parent: { pieceId: "piece11", portId: "b" }, childPortId: "a" },
+        { id: "piece13", type: "snake", parent: { pieceId: "piece2", portId: "b2" }, childPortId: "a" },
+      ],
+    },
+  },
+  {
+    id: "curve-straight-spur-yard",
+    name: "Curve+Straight Spur Yard",
+    description:
+      "The oval with a siding again, but the siding ends in a Curve+Straight Switch instead of stopping — " +
+      "attached through its own straight-through port (its common end is a peg, the one port on this piece " +
+      "that can't take the usual attach direction), forking the end of the siding into two more dead ends.",
+    layout: {
+      version: 1,
+      actions: [
+        { id: "piece1", type: "straight" },
+        { id: "piece2", type: "crossing4", parent: { pieceId: "piece1", portId: "b" }, childPortId: "a1" },
+        { id: "piece3", type: "curve45", parent: { pieceId: "piece2", portId: "a2" }, childPortId: "a" },
+        { id: "piece4", type: "curve45", parent: { pieceId: "piece3", portId: "b" }, childPortId: "a" },
+        { id: "piece5", type: "curve45", parent: { pieceId: "piece4", portId: "b" }, childPortId: "a" },
+        { id: "piece6", type: "curve45", parent: { pieceId: "piece5", portId: "b" }, childPortId: "a" },
+        { id: "piece7", type: "straight", parent: { pieceId: "piece6", portId: "b" }, childPortId: "a" },
+        { id: "piece8", type: "straight", parent: { pieceId: "piece7", portId: "b" }, childPortId: "a" },
+        { id: "piece9", type: "curve45", parent: { pieceId: "piece8", portId: "b" }, childPortId: "a" },
+        { id: "piece10", type: "curve45", parent: { pieceId: "piece9", portId: "b" }, childPortId: "a" },
+        { id: "piece11", type: "curve45", parent: { pieceId: "piece10", portId: "b" }, childPortId: "a" },
+        { id: "piece12", type: "curve45", parent: { pieceId: "piece11", portId: "b" }, childPortId: "a" },
+        { id: "piece13", type: "halfStraight", parent: { pieceId: "piece2", portId: "b2" }, childPortId: "a" },
+        { id: "piece14", type: "switchCurveStraight", parent: { pieceId: "piece13", portId: "b" }, childPortId: "through" },
+      ],
+    },
+  },
+  {
+    id: "overpass-spur",
+    name: "Overpass Spur",
+    description:
+      "The oval with a siding again, but the siding climbs a bridge — Ramp Up then Ramp Down back to back, " +
+      "cresting at level 1 before coming back down to a dead end at ground level. A good layout for trying " +
+      "the 3D preview: the whole hump is real, sourced geometry, not a flat spur pretending to rise.",
+    layout: {
+      version: 1,
+      actions: [
+        { id: "piece1", type: "straight" },
+        { id: "piece2", type: "crossing4", parent: { pieceId: "piece1", portId: "b" }, childPortId: "a1" },
+        { id: "piece3", type: "curve45", parent: { pieceId: "piece2", portId: "a2" }, childPortId: "a" },
+        { id: "piece4", type: "curve45", parent: { pieceId: "piece3", portId: "b" }, childPortId: "a" },
+        { id: "piece5", type: "curve45", parent: { pieceId: "piece4", portId: "b" }, childPortId: "a" },
+        { id: "piece6", type: "curve45", parent: { pieceId: "piece5", portId: "b" }, childPortId: "a" },
+        { id: "piece7", type: "straight", parent: { pieceId: "piece6", portId: "b" }, childPortId: "a" },
+        { id: "piece8", type: "straight", parent: { pieceId: "piece7", portId: "b" }, childPortId: "a" },
+        { id: "piece9", type: "curve45", parent: { pieceId: "piece8", portId: "b" }, childPortId: "a" },
+        { id: "piece10", type: "curve45", parent: { pieceId: "piece9", portId: "b" }, childPortId: "a" },
+        { id: "piece11", type: "curve45", parent: { pieceId: "piece10", portId: "b" }, childPortId: "a" },
+        { id: "piece12", type: "curve45", parent: { pieceId: "piece11", portId: "b" }, childPortId: "a" },
+        { id: "piece13", type: "halfStraight", parent: { pieceId: "piece2", portId: "b2" }, childPortId: "a" },
+        { id: "piece14", type: "bridgeGround", parent: { pieceId: "piece13", portId: "b" }, childPortId: "a" },
+        { id: "piece15", type: "bridgeSlope", parent: { pieceId: "piece14", portId: "b" }, childPortId: "a" },
+      ],
+    },
+  },
 ];

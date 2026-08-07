@@ -5,11 +5,12 @@ import PiecePicker from "./components/PiecePicker";
 import BOMPanel from "./components/BOMPanel";
 import InventoryPanel from "./components/InventoryPanel";
 import Palette from "./components/Palette";
-import TemplatesPanel from "./components/TemplatesPanel";
+import TemplatesModal from "./components/TemplatesModal";
 import Toolbar from "./components/Toolbar";
 import { LayoutGraph } from "./model/graph";
 import type { FreePortInfo, SerializedLayout } from "./model/graph";
 import type { Gender } from "./model/types";
+import { TEMPLATES } from "./data/templates";
 import type { Template } from "./data/templates";
 import { PIECE_DEFS_BY_TYPE } from "./data/pieceDefs";
 import { exportBomAsZip } from "./model/exportStl";
@@ -85,6 +86,7 @@ export default function App() {
   // switches to only when they want it (also why Canvas3D/three is lazy-
   // loaded below, instead of shipping in the main bundle unconditionally).
   const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   // Smart Join: joinMode is the toolbar toggle; joinSource is the free port
   // picked as the start once it's on; reachableKeys is recomputed fresh
   // every time a source is picked, so it's always accurate to the graph as
@@ -265,6 +267,7 @@ export default function App() {
     clearJoinSelection();
     setPending(null);
     setHistory({ entries: [newGraph.serialize()], index: 0 });
+    setTemplatesOpen(false);
   };
 
   const handleClearCanvas = () => {
@@ -514,7 +517,10 @@ export default function App() {
       )}
       <div className="app-body">
         <div className="left-panel">
-          <TemplatesPanel onUseTemplate={handleUseTemplate} />
+          <button className="templates-open-button" onClick={() => setTemplatesOpen(true)}>
+            <span className="templates-open-button-title">Start from a Template</span>
+            <span className="templates-open-button-hint">Browse {TEMPLATES.length} ready-made layouts</span>
+          </button>
           <Palette isEmpty={graph.isEmpty()} onSelectRoot={handlePaletteSelectRoot} />
         </div>
         {viewMode === "2d" ? (
@@ -562,6 +568,9 @@ export default function App() {
           onCancel={() => setPending(null)}
           onSmartJoin={pending.target ? handleSmartJoinFromPending : undefined}
         />
+      )}
+      {templatesOpen && (
+        <TemplatesModal onUseTemplate={handleUseTemplate} onClose={() => setTemplatesOpen(false)} />
       )}
     </div>
   );
