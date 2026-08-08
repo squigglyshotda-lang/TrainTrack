@@ -1,0 +1,21 @@
+/* Pierre Joshua design system — base element treatment. */
+::selection {
+  background: var(--rage-quit);
+  color: var(--new-game);
+}
+
+a {
+  color: var(--hitbox);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+:root[data-theme="dark"] a {
+  color: var(--extra-life);
+}
+
+@media (prefers-color-scheme: dark) {
+  a {
+    color: var(--extra-life);
+  }
+}

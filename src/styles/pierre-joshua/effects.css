@@ -1,0 +1,13 @@
+/* Pierre Joshua design system — hard-offset elevation + focus ring.
+   Always equal x and y, always down-and-right, always Ink (or Extra Life
+   on dark). No soft shadows, no inner shadows, no glows, no y-only
+   shadows, no opacity — a blurring shadow destroys the die-cut illusion. */
+:root {
+  --elev-1: 3px 3px 0 0 var(--shadow-color);
+  --elev-2: 6px 6px 0 0 var(--shadow-color);
+  --elev-3: 10px 10px 0 0 var(--shadow-color);
+  --elev-press: 1px 1px 0 0 var(--shadow-color);
+
+  --focus-ring-style: 3px solid var(--focus-ring);
+  --focus-ring-offset: 3px;
+}

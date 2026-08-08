@@ -1,170 +1,97 @@
-@font-face {
-  font-family: "Fredoka";
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("/fonts/fredoka-var.woff2") format("woff2");
-}
+@import "./styles/pierre-joshua/styles.css";
 
-@font-face {
-  font-family: "Nunito";
-  font-style: normal;
-  font-weight: 400 800;
-  font-display: swap;
-  src: url("/fonts/nunito-var.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "IBM Plex Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/plexmono400.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "IBM Plex Mono";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/fonts/plexmono600.woff2") format("woff2");
-}
-
+/* --- App-level aliases onto the Pierre Joshua semantic tokens ---
+   Every selector below this point keeps its original name (--bg,
+   --surface, --accent, etc.) so the component rules didn't need a
+   line-by-line rewrite — only what these resolve to changed. Port-gender
+   and elevation-tier colours keep their own dedicated aliases (defined in
+   styles/pierre-joshua/colors.css) rather than reusing --accent, since
+   they carry real information on the canvas that must stay distinguishable
+   from "this is an interactive control". */
 :root {
-  /* Light: cream + coral, playful-toy-shelf palette */
-  --bg: #fbf6ec;
-  --surface: #ffffff;
-  --surface-2: #f4ecda;
-  --ink: #332b22;
-  --muted: #948a78;
-  --line: #ece2cc;
-  --accent: #ff6a4d;
-  --accent-strong: #e6512f;
-  --accent-soft: #ffe3d9;
-  --peg: #f5a623;
-  --socket: #17b897;
-  --success: #2fae72;
-  --shadow: rgba(80, 55, 20, 0.14);
-  --level-up: #b8842a;
-  --level-down: #2969a3;
+  --bg: var(--surface-page);
+  --surface: var(--surface-card);
+  --surface-2: var(--surface-card-alt);
+  --ink: var(--text-body);
+  /* No separate muted grey: the accessibility contract makes ink the only
+     approved small-text colour on a light ground, so secondary text keeps
+     the same colour and gets its lower emphasis from size/weight instead. */
+  --muted: var(--text-body);
+  --line: var(--outline);
+  --accent: var(--fill-primary);
+  --accent-strong: var(--fill-primary-hover);
+  --accent-soft: var(--surface-sunken);
+  --peg: var(--port-peg);
+  --socket: var(--port-socket);
+  --success: var(--status-success);
+  --shadow: var(--shadow-color);
+  --level-up: var(--level-up);
+  --level-down: var(--level-down);
 
-  /* Pastel family cycled across the piece palette / picker cards */
-  --pastel-1-bg: #fff1c2;
-  --pastel-1-ink: #8a5a12;
-  --pastel-2-bg: #e4dcff;
-  --pastel-2-ink: #5b4796;
-  --pastel-3-bg: #ffd9e6;
-  --pastel-3-ink: #a13c62;
-  --pastel-4-bg: #d3f3e3;
-  --pastel-4-ink: #1f7a52;
-  --pastel-5-bg: #d6ecfb;
-  --pastel-5-ink: #2969a3;
-  --pastel-6-bg: #ffe1cc;
-  --pastel-6-ink: #b5551b;
-
-  --font-display: "Fredoka", "Baloo 2", sans-serif;
-  --font-body: "Nunito", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-
-  color-scheme: light;
+  /* Pastel family cycled across the piece palette / picker cards — tints
+     derived from the real accent tokens (mixed toward New Game / Game
+     Over) rather than invented hexes, since the system only ships two
+     light tints of its own (Checkpoint, Soft Reset) and this app's grid
+     wants six for at-a-glance piece-type variety. */
+  --pastel-1-bg: var(--checkpoint);
+  --pastel-1-ink: var(--hitbox);
+  --pastel-2-bg: var(--soft-reset);
+  --pastel-2-ink: var(--hitbox);
+  --pastel-3-bg: color-mix(in srgb, var(--coin-get) 35%, var(--new-game));
+  --pastel-3-ink: var(--hitbox);
+  --pastel-4-bg: color-mix(in srgb, var(--fast-travel) 35%, var(--new-game));
+  --pastel-4-ink: var(--hitbox);
+  --pastel-5-bg: color-mix(in srgb, var(--mana-potion) 30%, var(--new-game));
+  --pastel-5-ink: var(--hitbox);
+  --pastel-6-bg: color-mix(in srgb, var(--rage-quit) 22%, var(--new-game));
+  --pastel-6-ink: var(--hitbox);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Dark: the same toy shelf with the lights down */
-    --bg: #221c2c;
-    --surface: #2c2438;
-    --surface-2: #362c46;
-    --ink: #f6efe4;
-    --muted: #b3a6c4;
-    --line: #423656;
-    --accent: #ff8a6b;
-    --accent-strong: #ffab8f;
-    --accent-soft: #4a2e28;
-    --peg: #ffbf5c;
-    --socket: #3fd8b3;
-    --success: #5cd393;
-    --shadow: rgba(0, 0, 0, 0.45);
-    --level-up: #ffcf7a;
-    --level-down: #92cdf5;
-
-    --pastel-1-bg: #4a3f1f;
-    --pastel-1-ink: #ffd873;
-    --pastel-2-bg: #3a3160;
-    --pastel-2-ink: #cdbdff;
-    --pastel-3-bg: #4a2c3a;
-    --pastel-3-ink: #ffb0cc;
-    --pastel-4-bg: #1f3f33;
-    --pastel-4-ink: #8fe8bf;
-    --pastel-5-bg: #223c4d;
-    --pastel-5-ink: #92cdf5;
-    --pastel-6-bg: #4a3222;
-    --pastel-6-ink: #ffbd8a;
-
-    color-scheme: dark;
+    --pastel-1-bg: color-mix(in srgb, var(--checkpoint) 30%, var(--game-over));
+    --pastel-1-ink: var(--extra-life);
+    --pastel-2-bg: color-mix(in srgb, var(--soft-reset) 30%, var(--game-over));
+    --pastel-2-ink: var(--extra-life);
+    --pastel-3-bg: color-mix(in srgb, var(--coin-get) 30%, var(--game-over));
+    --pastel-3-ink: var(--extra-life);
+    --pastel-4-bg: color-mix(in srgb, var(--fast-travel) 30%, var(--game-over));
+    --pastel-4-ink: var(--extra-life);
+    --pastel-5-bg: color-mix(in srgb, var(--mana-potion) 30%, var(--game-over));
+    --pastel-5-ink: var(--extra-life);
+    --pastel-6-bg: color-mix(in srgb, var(--rage-quit) 24%, var(--game-over));
+    --pastel-6-ink: var(--extra-life);
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #221c2c;
-  --surface: #2c2438;
-  --surface-2: #362c46;
-  --ink: #f6efe4;
-  --muted: #b3a6c4;
-  --line: #423656;
-  --accent: #ff8a6b;
-  --accent-strong: #ffab8f;
-  --accent-soft: #4a2e28;
-  --peg: #ffbf5c;
-  --socket: #3fd8b3;
-  --success: #5cd393;
-  --shadow: rgba(0, 0, 0, 0.45);
-  --level-up: #ffcf7a;
-  --level-down: #92cdf5;
-  --pastel-1-bg: #4a3f1f;
-  --pastel-1-ink: #ffd873;
-  --pastel-2-bg: #3a3160;
-  --pastel-2-ink: #cdbdff;
-  --pastel-3-bg: #4a2c3a;
-  --pastel-3-ink: #ffb0cc;
-  --pastel-4-bg: #1f3f33;
-  --pastel-4-ink: #8fe8bf;
-  --pastel-5-bg: #223c4d;
-  --pastel-5-ink: #92cdf5;
-  --pastel-6-bg: #4a3222;
-  --pastel-6-ink: #ffbd8a;
-  color-scheme: dark;
+  --pastel-1-bg: color-mix(in srgb, var(--checkpoint) 30%, var(--game-over));
+  --pastel-1-ink: var(--extra-life);
+  --pastel-2-bg: color-mix(in srgb, var(--soft-reset) 30%, var(--game-over));
+  --pastel-2-ink: var(--extra-life);
+  --pastel-3-bg: color-mix(in srgb, var(--coin-get) 30%, var(--game-over));
+  --pastel-3-ink: var(--extra-life);
+  --pastel-4-bg: color-mix(in srgb, var(--fast-travel) 30%, var(--game-over));
+  --pastel-4-ink: var(--extra-life);
+  --pastel-5-bg: color-mix(in srgb, var(--mana-potion) 30%, var(--game-over));
+  --pastel-5-ink: var(--extra-life);
+  --pastel-6-bg: color-mix(in srgb, var(--rage-quit) 24%, var(--game-over));
+  --pastel-6-ink: var(--extra-life);
 }
 
 :root[data-theme="light"] {
-  --bg: #fbf6ec;
-  --surface: #ffffff;
-  --surface-2: #f4ecda;
-  --ink: #332b22;
-  --muted: #948a78;
-  --line: #ece2cc;
-  --accent: #ff6a4d;
-  --accent-strong: #e6512f;
-  --accent-soft: #ffe3d9;
-  --peg: #f5a623;
-  --socket: #17b897;
-  --success: #2fae72;
-  --shadow: rgba(80, 55, 20, 0.14);
-  --level-up: #b8842a;
-  --level-down: #2969a3;
-  --pastel-1-bg: #fff1c2;
-  --pastel-1-ink: #8a5a12;
-  --pastel-2-bg: #e4dcff;
-  --pastel-2-ink: #5b4796;
-  --pastel-3-bg: #ffd9e6;
-  --pastel-3-ink: #a13c62;
-  --pastel-4-bg: #d3f3e3;
-  --pastel-4-ink: #1f7a52;
-  --pastel-5-bg: #d6ecfb;
-  --pastel-5-ink: #2969a3;
-  --pastel-6-bg: #ffe1cc;
-  --pastel-6-ink: #b5551b;
-  color-scheme: light;
+  --pastel-1-bg: var(--checkpoint);
+  --pastel-1-ink: var(--hitbox);
+  --pastel-2-bg: var(--soft-reset);
+  --pastel-2-ink: var(--hitbox);
+  --pastel-3-bg: color-mix(in srgb, var(--coin-get) 35%, var(--new-game));
+  --pastel-3-ink: var(--hitbox);
+  --pastel-4-bg: color-mix(in srgb, var(--fast-travel) 35%, var(--new-game));
+  --pastel-4-ink: var(--hitbox);
+  --pastel-5-bg: color-mix(in srgb, var(--mana-potion) 30%, var(--new-game));
+  --pastel-5-ink: var(--hitbox);
+  --pastel-6-bg: color-mix(in srgb, var(--rage-quit) 22%, var(--new-game));
+  --pastel-6-ink: var(--hitbox);
 }
 
 * {
@@ -189,8 +116,8 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring-style);
+  outline-offset: var(--focus-ring-offset);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -213,7 +140,7 @@ button {
   flex-wrap: wrap;
   row-gap: 8px;
   padding: 14px 20px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--stroke-2) solid var(--line);
   background: var(--surface);
 }
 
@@ -227,7 +154,7 @@ button {
 
 .toolbar-title {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 800;
   font-size: 24px;
   color: var(--ink);
 }
@@ -237,9 +164,10 @@ button {
   font-weight: 700;
   font-size: 11px;
   letter-spacing: 0.02em;
-  color: var(--accent-strong);
-  background: var(--accent-soft);
-  border-radius: 999px;
+  color: var(--ink);
+  background: var(--checkpoint);
+  border: var(--stroke-1) solid var(--outline);
+  border-radius: var(--radius-pill);
   padding: 3px 10px;
 }
 
@@ -252,7 +180,7 @@ button {
 }
 
 .toolbar-divider {
-  width: 1px;
+  width: var(--stroke-2);
   align-self: stretch;
   background: var(--line);
   margin: 0 2px;
@@ -260,48 +188,57 @@ button {
 
 .toolbar-actions button,
 .piece-picker button {
-  border: 1.5px solid var(--line);
+  border: var(--stroke-2) solid var(--outline);
   background: var(--surface);
   color: var(--ink);
-  border-radius: 999px;
-  padding: 7px 15px;
+  border-radius: var(--radius-sticker);
+  padding: 7px 16px;
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 13px;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+  box-shadow: var(--elev-1);
+  transition: transform var(--dur-hover) var(--ease-glide), box-shadow var(--dur-hover) var(--ease-glide);
 }
 
 .toolbar-actions button:hover:not(:disabled),
 .piece-picker button:hover {
-  background: var(--surface-2);
-  border-color: var(--muted);
-  transform: translateY(-1px);
+  transform: var(--hover-lift-transform);
+  box-shadow: var(--elev-2);
+}
+
+.toolbar-actions button:active:not(:disabled),
+.piece-picker button:active {
+  transform: translate(1px, 1px);
+  box-shadow: var(--elev-press);
 }
 
 .toolbar-actions button:disabled {
-  color: var(--muted);
+  color: var(--ink);
+  background: var(--fog-of-war);
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
   transform: none;
 }
 
 .toolbar-export {
-  background: var(--accent) !important;
-  border-color: var(--accent) !important;
-  color: #ffffff !important;
+  background: var(--fill-primary) !important;
+  border-color: var(--outline) !important;
+  color: var(--fill-primary-text) !important;
+  border-radius: var(--radius-sticker-alt);
 }
 
 .toolbar-export:hover:not(:disabled) {
-  background: var(--accent-strong) !important;
-  border-color: var(--accent-strong) !important;
+  background: var(--fill-primary-hover) !important;
+  color: var(--new-game) !important;
 }
 
 .toolbar-export:disabled {
-  background: var(--surface-2) !important;
-  border-color: var(--line) !important;
-  color: var(--muted) !important;
+  background: var(--fog-of-war) !important;
+  border-color: var(--outline) !important;
+  color: var(--ink) !important;
 }
 
 .banner-error {
@@ -310,11 +247,12 @@ button {
   justify-content: space-between;
   gap: 12px;
   padding: 8px 20px;
-  background: color-mix(in srgb, #d9534f 14%, var(--surface));
-  color: #b3413c;
+  background: var(--status-error-ground);
+  color: var(--status-error-text);
   font-weight: 700;
   font-size: 13px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--stroke-2) solid var(--outline);
+  box-shadow: 0 3px 0 0 var(--status-error-shadow);
 }
 
 .banner-error-dismiss {
@@ -335,7 +273,7 @@ button {
 .left-panel {
   width: 280px;
   flex: none;
-  border-right: 1px solid var(--line);
+  border-right: var(--stroke-2) solid var(--line);
   background: var(--surface);
   padding: 18px;
   overflow-y: auto;
@@ -385,11 +323,12 @@ button {
   left: 16px;
   top: 16px;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
+  border: var(--stroke-1) solid var(--outline);
   background: var(--surface);
-  color: var(--muted);
+  color: var(--ink);
   font-size: 0.85rem;
-  box-shadow: 0 2px 8px var(--shadow);
+  box-shadow: var(--elev-1);
   pointer-events: none;
 }
 
@@ -418,7 +357,7 @@ button {
   pointer-events: none;
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--muted);
 }
 
@@ -454,26 +393,26 @@ button {
   transform: translate(-50%, -50%);
   color: var(--ink);
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 15px;
   pointer-events: none;
   background: var(--surface);
-  border: 2px dashed var(--line);
+  border: var(--stroke-2) dashed var(--outline);
   padding: 12px 20px;
-  border-radius: 16px;
+  border-radius: var(--radius-sticker);
 }
 
 .piece-outline {
   fill: var(--surface);
   stroke: var(--line);
-  stroke-width: 1.6;
+  stroke-width: 2.2;
   vector-effect: non-scaling-stroke;
   transition: fill 0.12s ease, stroke 0.12s ease;
 }
 
 .piece-outline-selected {
   stroke: var(--accent);
-  stroke-width: 2.6;
+  stroke-width: 3.2;
   fill: var(--accent-soft);
 }
 
@@ -495,24 +434,26 @@ button {
    several pieces are stacked at different heights (or a piece is simply
    not at the layout's starting level), a dashed, tinted outline plus a
    drop shadow makes "this one isn't down here with everything else"
-   readable without having to click each piece to check. */
+   readable without having to click each piece to check. Warm gold rises,
+   cool sky descends — a deliberate mnemonic, not a leftover reuse of the
+   peg/socket dot colours they sit near on an elevated piece. */
 .piece-elevated {
-  filter: drop-shadow(0 3px 2.5px var(--shadow));
+  filter: drop-shadow(3px 3px 0 var(--shadow));
 }
 
 .piece-elevated .piece-outline {
   stroke: var(--level-up);
-  stroke-width: 2.2;
+  stroke-width: 2.8;
   stroke-dasharray: 5 2.5;
 }
 
 .piece-depressed {
-  filter: drop-shadow(0 -2.5px 2.5px var(--shadow));
+  filter: drop-shadow(-3px -3px 0 var(--shadow));
 }
 
 .piece-depressed .piece-outline {
   stroke: var(--level-down);
-  stroke-width: 2.2;
+  stroke-width: 2.8;
   stroke-dasharray: 5 2.5;
 }
 
@@ -549,7 +490,7 @@ button {
 
 .closure-line {
   stroke: var(--success);
-  stroke-width: 2;
+  stroke-width: 2.5;
   stroke-dasharray: 5 4;
   vector-effect: non-scaling-stroke;
 }
@@ -557,19 +498,19 @@ button {
 .draw-path-preview {
   fill: none;
   stroke: var(--accent);
-  stroke-width: 3;
+  stroke-width: 3.5;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 2 7;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .sidebar {
   width: 300px;
   flex: none;
-  border-left: 1px solid var(--line);
+  border-left: var(--stroke-2) solid var(--line);
   background: var(--surface);
   padding: 18px;
   overflow-y: auto;
@@ -578,7 +519,7 @@ button {
 .sidebar h2,
 .left-panel h2 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 16px;
   color: var(--ink);
   margin: 0 0 10px;
@@ -606,19 +547,20 @@ button {
 
 .bom-table td:first-child {
   color: var(--ink);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .bom-count {
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  color: var(--accent-strong);
+  color: var(--ink);
+  font-weight: 700;
 }
 
 .bom-total td {
   border-bottom: none;
-  border-top: 2px solid var(--line);
+  border-top: var(--stroke-1) solid var(--line);
   font-weight: 800;
   padding-top: 9px;
 }
@@ -628,10 +570,11 @@ button {
 }
 
 .bom-header-row td {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  font-weight: 700;
   color: var(--muted);
   border-bottom: 1px solid var(--line);
   padding-bottom: 6px;
@@ -639,7 +582,7 @@ button {
 
 .bom-flag {
   margin-left: 5px;
-  color: #d9534f;
+  color: var(--ink);
   cursor: help;
 }
 
@@ -653,10 +596,11 @@ button {
 
 .bom-bed-warning {
   margin: 10px 0 0;
-  padding: 9px 12px;
-  border-radius: 12px;
-  background: color-mix(in srgb, #d9534f 12%, transparent);
-  color: #b3413c;
+  padding: 8px 12px;
+  border: var(--stroke-1) solid var(--outline);
+  border-radius: var(--radius-chip);
+  background: color-mix(in srgb, var(--coin-get) 45%, var(--new-game));
+  color: var(--hitbox);
   font-weight: 700;
   font-size: 12px;
 }
@@ -668,9 +612,9 @@ button {
 
 .material-value {
   font-family: var(--font-mono);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 19px;
-  color: var(--accent-strong);
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -686,18 +630,19 @@ button {
   gap: 8px;
   margin: 2px 0 8px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .material-cost-input input {
-  width: 72px;
+  width: 76px;
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  border: 1.5px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--ink);
+  border: var(--stroke-2) solid var(--hitbox);
+  border-radius: var(--radius-input);
+  background: var(--new-game);
+  color: var(--hitbox);
+  box-shadow: 3px 3px 0 0 var(--hitbox);
   padding: 4px 8px;
 }
 
@@ -719,18 +664,19 @@ button {
 
 .inventory-table td:first-child {
   color: var(--ink);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .inventory-table input {
-  width: 56px;
+  width: 60px;
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  border: 1.5px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--ink);
+  border: var(--stroke-2) solid var(--hitbox);
+  border-radius: var(--radius-input);
+  background: var(--new-game);
+  color: var(--hitbox);
+  box-shadow: 3px 3px 0 0 var(--hitbox);
   padding: 4px 8px;
   float: right;
 }
@@ -750,18 +696,19 @@ button {
   align-items: center;
   gap: 7px;
   padding: 6px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--success) 16%, transparent);
-  color: var(--success);
+  border: var(--stroke-1) solid var(--outline);
+  border-radius: var(--radius-pill);
+  background: var(--checkpoint);
+  color: var(--hitbox);
   font-family: var(--font-mono);
-  font-weight: 600;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .closure-list li::before {
   content: "";
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--success);
   flex: none;
@@ -777,7 +724,7 @@ button {
   fill: var(--surface);
   stroke: currentColor;
   stroke-width: 3;
-  opacity: 0.55;
+  opacity: 0.65;
 }
 
 /* --- Palette (permanent piece library, left panel) --- */
@@ -799,17 +746,23 @@ button {
   align-items: center;
   gap: 6px;
   padding: 10px 6px 8px;
-  border: none;
-  border-radius: 16px;
+  border: var(--stroke-2) solid var(--outline);
+  border-radius: var(--radius-card);
   background: var(--pastel-1-bg);
   color: var(--pastel-1-ink);
   cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: var(--elev-1);
+  transition: transform var(--dur-hover) var(--ease-glide), box-shadow var(--dur-hover) var(--ease-glide);
 }
 
 .palette-card:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 6px 14px var(--shadow);
+  transform: var(--hover-lift-transform);
+  box-shadow: var(--elev-2);
+}
+
+.palette-card:active {
+  transform: translate(1px, 1px);
+  box-shadow: var(--elev-press);
 }
 
 .palette-card .piece-thumb-outline {
@@ -855,21 +808,27 @@ button {
   width: 100%;
   text-align: left;
   padding: 12px 14px;
-  border: 1.5px solid var(--line);
-  border-radius: 14px;
+  border: var(--stroke-2) solid var(--outline);
+  border-radius: var(--radius-sticker);
   background: var(--surface);
   cursor: pointer;
-  transition: border-color 0.12s ease, transform 0.08s ease;
+  box-shadow: var(--elev-1);
+  transition: transform var(--dur-hover) var(--ease-glide), box-shadow var(--dur-hover) var(--ease-glide);
 }
 
 .templates-open-button:hover {
-  border-color: var(--accent);
-  transform: translateY(-1px);
+  transform: var(--hover-lift-transform);
+  box-shadow: var(--elev-2);
+}
+
+.templates-open-button:active {
+  transform: translate(1px, 1px);
+  box-shadow: var(--elev-press);
 }
 
 .templates-open-button-title {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14px;
   color: var(--ink);
 }
@@ -896,22 +855,27 @@ button {
   gap: 6px;
   text-align: left;
   padding: 10px 12px 12px;
-  border: 1.5px solid var(--line);
-  border-radius: 14px;
+  border: var(--stroke-3) solid var(--outline);
+  border-radius: var(--radius-card);
   background: var(--surface);
   cursor: pointer;
-  transition: border-color 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+  box-shadow: var(--elev-1);
+  transition: transform var(--dur-hover) var(--ease-glide), box-shadow var(--dur-hover) var(--ease-glide);
 }
 
 .template-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 18px var(--shadow);
+  transform: var(--hover-lift-transform);
+  box-shadow: var(--elev-2);
+}
+
+.template-card:active {
+  transform: translate(1px, 1px);
+  box-shadow: var(--elev-press);
 }
 
 .template-card-name {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 13.5px;
   color: var(--ink);
 }
@@ -926,7 +890,7 @@ button {
   display: block;
   width: 100%;
   height: 120px;
-  border-radius: 10px;
+  border-radius: var(--radius-chip);
   background: var(--surface-2);
 }
 
@@ -934,7 +898,7 @@ button {
   fill: var(--bg);
   stroke: var(--ink);
   stroke-width: 3;
-  opacity: 0.6;
+  opacity: 0.7;
   vector-effect: non-scaling-stroke;
 }
 
@@ -947,7 +911,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(20, 16, 10, 0.45);
+  background: rgba(16, 14, 46, 0.72);
   padding: 24px;
 }
 
@@ -958,8 +922,10 @@ button {
   max-height: 85vh;
   width: 100%;
   background: var(--surface);
-  border-radius: 20px;
-  box-shadow: 0 24px 60px var(--shadow);
+  border: var(--stroke-3) solid var(--outline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-3);
+  transform: rotate(-0.5deg);
   overflow: hidden;
 }
 
@@ -968,15 +934,15 @@ button {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
+  border-bottom: var(--stroke-2) solid var(--outline);
+  background: var(--checkpoint);
 }
 
 .modal-header h2 {
   margin: 0;
   font-family: var(--font-display);
   font-size: 17px;
-  color: var(--ink);
+  color: var(--hitbox);
 }
 
 .modal-close {
@@ -986,13 +952,12 @@ button {
   font-size: 20px;
   line-height: 1;
   padding: 4px 8px;
-  color: var(--muted);
-  border-radius: 8px;
+  color: var(--hitbox);
+  border-radius: var(--radius-chip);
 }
 
 .modal-close:hover {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: var(--soft-reset);
 }
 
 @media (max-width: 720px) {
@@ -1007,9 +972,9 @@ button {
   position: fixed;
   z-index: 10;
   background: var(--surface);
-  border: 1.5px solid var(--line);
-  border-radius: 18px;
-  box-shadow: 0 14px 32px var(--shadow);
+  border: var(--stroke-3) solid var(--outline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elev-2);
   width: 280px;
   overflow: hidden;
 }
@@ -1021,13 +986,13 @@ button {
   padding: 10px 14px;
   font-family: var(--font-display);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ink);
   background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--stroke-2) solid var(--outline);
 }
 
-/* .piece-picker button's pill styling (border-radius, nowrap, padding)
+/* .piece-picker button's sticker styling (border-radius, nowrap, padding)
    otherwise wins on specificity — same fix as .piece-picker-grid's own
    button.palette-card override below. */
 .piece-picker button.piece-picker-smart-join {
@@ -1035,9 +1000,9 @@ button {
   width: 100%;
   border: none;
   border-radius: 0;
-  border-bottom: 1px solid var(--line);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  border-bottom: var(--stroke-2) solid var(--outline);
+  background: var(--checkpoint);
+  color: var(--hitbox);
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 11.5px;
@@ -1046,12 +1011,14 @@ button {
   white-space: normal;
   padding: 8px 14px;
   cursor: pointer;
+  box-shadow: none;
   transform: none;
 }
 
 .piece-picker button.piece-picker-smart-join:hover {
-  background: color-mix(in srgb, var(--accent) 22%, var(--accent-soft));
-  border-color: var(--line);
+  background: var(--extra-life);
+  border-color: var(--outline);
+  box-shadow: none;
   transform: none;
 }
 
@@ -1081,13 +1048,16 @@ button {
   border: none;
   background: none;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-chip);
   font-size: 13px;
+  box-shadow: none;
 }
 
 .piece-picker-list li button:hover,
 .piece-picker-list li button.piece-picker-port-hovered {
-  background: var(--accent-soft);
+  background: var(--checkpoint);
+  transform: none;
+  box-shadow: none;
 }
 
 .piece-picker-port-gender {
@@ -1100,7 +1070,7 @@ button {
   width: 100%;
   height: 160px;
   padding: 6px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--stroke-2) solid var(--outline);
   background: var(--surface-2);
 }
 
@@ -1114,8 +1084,8 @@ button {
 
 .piece-port-diagram-ring {
   fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.5;
+  stroke: var(--epic-loot);
+  stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
 
@@ -1129,7 +1099,7 @@ button {
 }
 
 .piece-port-diagram-label-hovered {
-  fill: var(--accent-strong);
+  fill: var(--epic-loot);
 }
 
 .piece-picker-grid {
@@ -1141,11 +1111,11 @@ button {
   overflow-y: auto;
 }
 
-/* .piece-picker button's pill styling otherwise wins on specificity over
+/* .piece-picker button's sticker styling otherwise wins on specificity over
    .palette-card's — restore the colorful card look inside the popover too. */
 .piece-picker-grid.piece-picker-grid button.palette-card {
-  border: none;
-  border-radius: 16px;
+  border: var(--stroke-2) solid var(--outline);
+  border-radius: var(--radius-card);
   background: var(--pastel-1-bg);
   color: var(--pastel-1-ink);
   padding: 10px 6px 8px;
@@ -1186,10 +1156,10 @@ button {
   display: flex;
   gap: 4px;
   background: var(--surface);
-  border: 1.5px solid var(--line);
-  border-radius: 999px;
+  border: var(--stroke-2) solid var(--outline);
+  border-radius: var(--radius-pill);
   padding: 5px;
-  box-shadow: 0 10px 24px var(--shadow);
+  box-shadow: var(--elev-2);
   transform: translateX(-50%);
 }
 
@@ -1201,22 +1171,22 @@ button {
   font-weight: 800;
   font-size: 12.5px;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.12s ease;
+  transition: background-color var(--dur-hover) var(--ease-glide);
 }
 
 .selection-menu button:hover {
-  background: var(--surface-2);
+  background: var(--checkpoint);
 }
 
 .selection-menu-delete {
-  color: #b3413c;
+  color: var(--hitbox);
 }
 
 .selection-menu-delete:hover {
-  background: color-mix(in srgb, #b3413c 14%, transparent) !important;
+  background: var(--soft-reset) !important;
 }
 
 /* --- Piece name tag (hover or select a piece to see what it is) --- */
@@ -1225,24 +1195,25 @@ button {
   position: fixed;
   z-index: 11;
   transform: translateX(-50%);
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--hitbox);
+  color: var(--extra-life);
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 12px;
   padding: 4px 10px;
-  border-radius: 999px;
+  border: var(--stroke-1) solid var(--extra-life);
+  border-radius: var(--radius-pill);
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 6px 14px var(--shadow);
+  box-shadow: var(--elev-1);
 }
 
 /* --- Smart Join: pick a source port, only reachable ports light up --- */
 
 .port-join-ring {
   fill: none;
-  stroke: var(--accent);
-  stroke-width: 2;
+  stroke: var(--epic-loot);
+  stroke-width: 2.5;
   vector-effect: non-scaling-stroke;
   animation: join-ring-pulse 1.4s ease-in-out infinite;
   /* Decorative only — never swallow a click meant for a nearby port
@@ -1254,7 +1225,7 @@ button {
 .port-reachable-ring {
   fill: none;
   stroke: var(--success);
-  stroke-width: 2;
+  stroke-width: 2.5;
   stroke-dasharray: 3 3;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
@@ -1265,7 +1236,7 @@ button {
 .port-hover-reachable-ring {
   fill: none;
   stroke: var(--success);
-  stroke-width: 1.5;
+  stroke-width: 2;
   opacity: 0.55;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
@@ -1288,7 +1259,7 @@ button {
 }
 
 .toolbar-join-active {
-  background: var(--accent) !important;
-  color: #ffffff !important;
-  border-color: var(--accent) !important;
+  background: var(--extra-life) !important;
+  color: var(--hitbox) !important;
+  border-color: var(--outline) !important;
 }

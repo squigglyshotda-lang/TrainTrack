@@ -1,0 +1,54 @@
+/* Pierre Joshua design system — typography tokens.
+   Two faces, no third — never invert the pairing (mono headlines lose the
+   toy feel; Baloo body copy stops being readable past two lines). */
+:root {
+  --font-display: "Baloo 2", "Comic Sans MS", system-ui, sans-serif;
+  --font-body: "Space Mono", "SFMono-Regular", Menlo, monospace;
+  --font-mono: var(--font-body);
+
+  --type-display-size: 88px;
+  --type-display-weight: 800;
+  --type-display-leading: 0.92;
+  --type-display-tracking: -0.02em;
+
+  --type-h1-size: 60px;
+  --type-h1-weight: 800;
+  --type-h1-leading: 0.98;
+  --type-h1-tracking: -0.015em;
+
+  --type-h2-size: 42px;
+  --type-h2-weight: 700;
+  --type-h2-leading: 1.04;
+  --type-h2-tracking: -0.01em;
+
+  --type-h3-size: 30px;
+  --type-h3-weight: 700;
+  --type-h3-leading: 1.1;
+
+  --type-h4-size: 24px;
+  --type-h4-weight: 600;
+  --type-h4-leading: 1.15;
+
+  --type-body-lg-size: 19px;
+  --type-body-lg-leading: 1.55;
+
+  --type-body-size: 16px;
+  --type-body-leading: 1.6;
+
+  --type-small-size: 14px;
+  --type-small-leading: 1.5;
+
+  --type-eyebrow-size: 12px;
+  --type-eyebrow-weight: 700;
+  --type-eyebrow-leading: 1.4;
+  --type-eyebrow-tracking: 0.14em;
+}
+
+.pj-eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--type-eyebrow-size);
+  font-weight: var(--type-eyebrow-weight);
+  line-height: var(--type-eyebrow-leading);
+  letter-spacing: var(--type-eyebrow-tracking);
+  text-transform: uppercase;
+}

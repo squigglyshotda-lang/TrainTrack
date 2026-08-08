@@ -1,0 +1,5 @@
+/* Pierre Joshua design system — font loading.
+   Google Fonts stand-in for the two faces the handoff specifies. Baloo 2
+   substitutes for the logo's custom hand lettering (no font binaries were
+   supplied — confirm with the client before shipping, per README). */
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap");

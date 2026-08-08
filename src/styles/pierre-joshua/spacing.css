@@ -1,0 +1,27 @@
+/* Pierre Joshua design system — spacing ramp + the signature irregular
+   radii. Each radius corner differs from its neighbours by 2–8px on
+   purpose: a perfect 24px radius reads like a framework, the irregular
+   set reads hand-cut. Do not normalise these to a single value. */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+
+  --radius-sticker: 26px 30px 24px 32px; /* buttons, alerts, nav */
+  --radius-sticker-alt: 32px 24px 30px 26px; /* alternate, breaks repetition */
+  --radius-card: 34px 28px 36px 30px; /* cards, modals, tiles */
+  --radius-chip: 14px 18px 12px 16px; /* chips, tags, icon buttons */
+  --radius-input: 18px 14px 16px 20px; /* form fields */
+  --radius-pill: 999px; /* badges, progress tracks */
+
+  --stroke-1: 3px; /* badges, tags */
+  --stroke-2: 4px; /* buttons, inputs, alerts */
+  --stroke-3: 6px; /* cards, modals, nav */
+}

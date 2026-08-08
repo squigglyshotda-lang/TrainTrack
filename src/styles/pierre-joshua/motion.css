@@ -1,0 +1,60 @@
+/* Pierre Joshua design system — motion.
+   One rule governs everything: the user pops, the interface glides. If a
+   person caused it (press, save, pick up, badge arriving) it pops — a
+   spring that overshoots and settles. If the interface caused it (modal,
+   tab, tooltip, page change, hover lift) it glides — one smooth arc, no
+   overshoot. */
+:root {
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-glide: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-glide-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-shake: cubic-bezier(0.36, 0, 0.66, -0.56);
+
+  --dur-press: 120ms;
+  --dur-confirm: 360ms;
+  --dur-hover: 180ms;
+  --dur-open: 250ms;
+  --dur-close: 180ms;
+  --dur-page: 300ms;
+  --dur-tooltip: 120ms;
+  --dur-toast: 300ms;
+  --dur-payoff: 560ms;
+  --dur-shake: 300ms;
+
+  --pop-micro: 1.04;
+  --pop-soft: 1.08;
+  --pop-loud: 1.14;
+  --tilt-hover: -0.5deg;
+  --tilt-pop: 1deg;
+
+  /* The signature hover: lift + a hair of tilt, shadow steps one level
+     deeper alongside it (pair with --elev-1 -> --elev-2 on :hover). */
+  --hover-lift-transform: translate(-2px, -3px) rotate(var(--tilt-hover));
+}
+
+@keyframes pj-shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+
+@keyframes pj-loop {
+  from { background-position: 0 0; }
+  to { background-position: 40px 0; }
+}
+
+/* Reduced motion policy: same state, no movement — never "same movement,
+   faster". Every element still arrives, still shows hover/focus/selected
+   states, still confirms; it simply arrives without travelling. Shadow
+   depth changes still happen (they carry state, not motion). */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --pop-micro: 1;
+    --pop-soft: 1;
+    --pop-loud: 1;
+    --tilt-hover: 0deg;
+    --tilt-pop: 0deg;
+    --hover-lift-transform: none;
+  }
+}

@@ -1,0 +1,15 @@
+/* Pierre Joshua design system — token layer entry point.
+   @import lines only. Reconstructed from the handoff README (the real
+   bundle's tokens/*.css never synced over — see git history / the
+   session that created this file for the gap). Every value here is
+   quoted verbatim from that doc's tables, not guessed; components in
+   app.css read the semantic aliases defined in colors.css, not the raw
+   palette. If the real bundle syncs later, this directory is the literal
+   drop-in replacement target — file-for-file, same names. */
+@import "./fonts.css";
+@import "./colors.css";
+@import "./typography.css";
+@import "./spacing.css";
+@import "./effects.css";
+@import "./motion.css";
+@import "./base.css";

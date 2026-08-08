@@ -1,0 +1,105 @@
+/* Pierre Joshua design system — colour tokens.
+   Reconstructed from the handoff README (the real tokens/colors.css never
+   synced over) — every hex value below is quoted verbatim from that doc,
+   not guessed. See README.md's "Design tokens" and "Accessibility
+   contract" sections for the source of truth once the real bundle lands.
+
+   Roles, per the handoff: Core = extra-life / rage-quit / hitbox.
+   Tints (backgrounds) = checkpoint / soft-reset / new-game.
+   Accents (~10% of a screen, one per screen) = mana-potion / epic-loot /
+   fast-travel / coin-get. Neutrals = fog-of-war / game-over. */
+
+:root {
+  /* --- Palette: 12 tokens, game name + plain name in the comment --- */
+  --extra-life: #6fe9c8; /* Mint */
+  --rage-quit: #f62da0; /* Hot Pink — fills/outlines/shadows only, NEVER text */
+  --hitbox: #201b52; /* Ink Navy */
+  --new-game: #faf4ec; /* Bone */
+  --checkpoint: #c9f7e7; /* Pale Mint */
+  --soft-reset: #ffb8dc; /* Bubblegum */
+  --mana-potion: #0e9e86; /* Deep Teal */
+  --epic-loot: #7b3ff2; /* Violet — focus ring only, appears nowhere else */
+  --fast-travel: #35c3f0; /* Sky */
+  --coin-get: #ffc93c; /* Gold */
+  --fog-of-war: #8c8aa6; /* Grey Lilac — disabled fills only */
+  --game-over: #100e2e; /* Blackcurrant */
+
+  /* --- Semantic aliases: components read these, never the raw palette
+     above, or they won't theme (this was a real bug in the handoff's
+     first pass — see README) --- */
+  --surface-page: var(--new-game);
+  --surface-card: var(--checkpoint);
+  --surface-card-alt: var(--soft-reset);
+  --surface-sunken: var(--checkpoint);
+  --text-body: var(--hitbox);
+  --text-on-dark: var(--extra-life);
+  --outline: var(--hitbox);
+  --outline-on-dark: var(--extra-life);
+  --focus-ring: var(--epic-loot);
+  --shadow-color: var(--hitbox);
+  --shadow-color-on-dark: var(--extra-life);
+
+  --fill-primary: var(--extra-life);
+  --fill-primary-hover: var(--mana-potion);
+  --fill-primary-text: var(--hitbox);
+  --fill-secondary: var(--soft-reset);
+  --fill-accent: var(--coin-get);
+
+  --status-success: var(--mana-potion);
+  --status-error-ground: var(--soft-reset);
+  --status-error-shadow: var(--rage-quit);
+  --status-error-text: var(--hitbox);
+  --status-info: var(--fast-travel);
+  --status-warning: var(--coin-get);
+  --status-disabled: var(--fog-of-war);
+
+  /* Port-gender + elevation-tier colours used on the 2D canvas — kept as
+     their own aliases (not reused ad hoc) so the mnemonic pairing is
+     documented once: warm gold rises, cool sky descends, distinct from
+     the socket/peg dot colours they visually sit near on an elevated
+     piece. */
+  --port-peg: var(--coin-get);
+  --port-socket: var(--fast-travel);
+  --level-up: var(--rage-quit);
+  --level-down: var(--fast-travel);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-page: var(--game-over);
+    --surface-card: var(--game-over);
+    --surface-card-alt: var(--game-over);
+    --surface-sunken: color-mix(in srgb, var(--extra-life) 10%, var(--game-over));
+    --text-body: var(--extra-life);
+    --outline: var(--extra-life);
+    --shadow-color: var(--extra-life);
+    --fill-primary-text: var(--hitbox);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --surface-page: var(--game-over);
+  --surface-card: var(--game-over);
+  --surface-card-alt: var(--game-over);
+  --surface-sunken: color-mix(in srgb, var(--extra-life) 10%, var(--game-over));
+  --text-body: var(--extra-life);
+  --outline: var(--extra-life);
+  --shadow-color: var(--extra-life);
+  --fill-primary-text: var(--hitbox);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --surface-page: var(--new-game);
+  --surface-card: var(--checkpoint);
+  --surface-card-alt: var(--soft-reset);
+  --surface-sunken: var(--checkpoint);
+  --text-body: var(--hitbox);
+  --outline: var(--hitbox);
+  --shadow-color: var(--hitbox);
+  --fill-primary-text: var(--hitbox);
+  color-scheme: light;
+}
