@@ -428,7 +428,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
 
       {graph.isEmpty() && (
         <div className="canvas-empty-hint">
-          Click anywhere to place your first piece
+          Nothing on the board yet. Click anywhere to drop your first piece.
         </div>
       )}
 

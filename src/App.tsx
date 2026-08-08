@@ -161,7 +161,7 @@ export default function App() {
     setReachableKeys(reachable);
     setBannerError(
       reachable.size === 0
-        ? "No other free port can be reached from here with the current piece set. Try a different starting port."
+        ? "Nothing reachable from here with the pieces you've got. Try a different starting port."
         : null
     );
   };
@@ -187,7 +187,7 @@ export default function App() {
     const free = graph.freePorts();
     const a = free.find((fp) => fp.pieceId === source.pieceId && fp.port.id === source.portId);
     if (!a) {
-      setBannerError("The starting port isn't free anymore — pick a new one.");
+      setBannerError("That port isn't free anymore. Pick a new one.");
       clearJoinSelection();
       return;
     }
@@ -281,7 +281,7 @@ export default function App() {
   };
 
   const handleUseTemplate = (template: Template) => {
-    if (!graph.isEmpty() && !window.confirm("This replaces your current layout. Continue?")) return;
+    if (!graph.isEmpty() && !window.confirm("This'll replace your current layout. Continue?")) return;
     const newGraph = LayoutGraph.fromSerialized(template.layout);
     graphRef.current = newGraph;
     setSelectedId(null);
@@ -293,7 +293,7 @@ export default function App() {
 
   const handleClearCanvas = () => {
     if (graph.isEmpty()) return;
-    if (!window.confirm("This clears your whole layout. Continue?")) return;
+    if (!window.confirm("This'll clear your whole layout. Continue?")) return;
     const newGraph = new LayoutGraph();
     graphRef.current = newGraph;
     setSelectedId(null);
@@ -424,7 +424,7 @@ export default function App() {
     try {
       await exportBomAsZip(graph.bom());
     } catch (err) {
-      setBannerError(err instanceof Error ? err.message : "Export failed.");
+      setBannerError(err instanceof Error ? err.message : "That export didn't finish. Give it another go.");
     } finally {
       setIsExporting(false);
     }
@@ -448,7 +448,7 @@ export default function App() {
     try {
       await exportLayoutAsPdf(graph);
     } catch (err) {
-      setBannerError(err instanceof Error ? err.message : "PDF export failed.");
+      setBannerError(err instanceof Error ? err.message : "That PDF didn't export. Give it another go.");
     }
   };
 
@@ -487,7 +487,7 @@ export default function App() {
       // than treating the load itself as one undoable step.
       setHistory({ entries: [newGraph.serialize()], index: 0 });
     } catch (err) {
-      setBannerError(err instanceof Error ? err.message : "Could not load that file.");
+      setBannerError(err instanceof Error ? err.message : "That file didn't load. Give it another go.");
     }
   };
 

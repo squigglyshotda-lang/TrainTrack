@@ -22,7 +22,7 @@ export default function Palette({ isEmpty, onSelectRoot }: PaletteProps) {
       <p className="muted palette-hint">
         {isEmpty
           ? "Click a piece to start your layout."
-          : "Click a piece to add a new, separate one — or attach more by clicking a free port on the canvas."}
+          : "Click a piece to add a new, separate one — or attach to a free port already on the canvas."}
       </p>
       <div className="palette-grid">
         {VISIBLE_PIECE_DEFS.map((def) => (

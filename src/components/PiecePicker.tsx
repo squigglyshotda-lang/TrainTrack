@@ -115,7 +115,7 @@ export default function PiecePicker({
             </button>
           );
         })}
-        {options.length === 0 && <p className="piece-picker-empty">No compatible pieces</p>}
+        {options.length === 0 && <p className="piece-picker-empty">No compatible pieces here.</p>}
       </div>
     </div>
   );
